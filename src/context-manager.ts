@@ -1,17 +1,20 @@
+import { Content, Part } from '@google/generative-ai';
+
 /**
  * Represents a single message in the conversation
  */
 export interface ChatMessage {
-  role: 'user' | 'assistant';
+  role: 'user' | 'model';
   content: string;
   timestamp: Date;
+  parts?: Part[];
 }
 
 /**
  * Manages conversation history and context
  */
 export class ContextManager {
-  private chatHistory: ChatMessage[] = [];
+  private chatHistory: Content[] = [];
 
   /**
    * Add a user message to the history
@@ -19,39 +22,53 @@ export class ContextManager {
   addUserMessage(content: string): void {
     this.chatHistory.push({
       role: 'user',
-      content,
-      timestamp: new Date()
+      parts: [{ text: content }]
     });
   }
 
   /**
-   * Add an assistant message to the history
+   * Add a model message to the history
    */
-  addAssistantMessage(content: string): void {
+  addModelMessage(parts: Part[]): void {
     this.chatHistory.push({
-      role: 'assistant',
-      content,
-      timestamp: new Date()
+      role: 'model',
+      parts
     });
   }
 
   /**
-   * Get the full chat history
+   * Add a function response to the history
    */
-  getChatHistory(): ChatMessage[] {
+  addFunctionResponse(functionName: string, response: any): void {
+    this.chatHistory.push({
+      role: 'function',
+      parts: [{
+        functionResponse: {
+          name: functionName,
+          response
+        }
+      }]
+    });
+  }
+
+  /**
+   * Get the chat history in Gemini API format
+   */
+  getChatHistory(): Content[] {
     return [...this.chatHistory];
   }
 
   /**
-   * Get a formatted conversation context for the AI
+   * Get a formatted conversation context for display
    */
   getConversationContext(): string {
-    if (this.chatHistory.length === 0) {
-      return '';
-    }
-
     return this.chatHistory
-      .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+      .filter(msg => msg.role === 'user' || msg.role === 'model')
+      .map(msg => {
+        const role = msg.role === 'user' ? 'User' : 'Assistant';
+        const text = msg.parts?.[0] && 'text' in msg.parts[0] ? msg.parts[0].text : '[non-text content]';
+        return `${role}: ${text}`;
+      })
       .join('\n\n');
   }
 

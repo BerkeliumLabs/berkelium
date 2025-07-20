@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node dist/berkelium.js",
+    "start": "node --env-file=../.env dist/berkelium.js",
     "clean": "rimraf dist"
   },
   "keywords": ["ai", "cli", "assistant", "gemini", "typescript"],

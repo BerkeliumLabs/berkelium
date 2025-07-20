@@ -3,6 +3,8 @@
 import { input } from '@inquirer/prompts';
 import { GeminiClient } from './gemini-client';
 import { ContextManager } from './context-manager';
+import { executeTool, ToolName } from './tools';
+import { FunctionCall } from '@google/generative-ai';
 
 /**
  * Main Berkelium CLI application
@@ -51,30 +53,102 @@ class BerkeliumCLI {
   }
 
   /**
-   * Handle user input by sending it to Gemini
+   * Handle user input by sending it to Gemini and processing any tool calls
    */
   private async handleUserInput(userInput: string): Promise<void> {
     try {
       // Add user message to history
       this.contextManager.addUserMessage(userInput);
 
-      console.log('🤔 Thinking...');
-      
-      // Build context-aware prompt
-      const conversationContext = this.contextManager.getConversationContext();
-      const promptWithContext = conversationContext 
-        ? `Previous conversation:\n${conversationContext}\n\nCurrent question: ${userInput}`
-        : userInput;
-
-      const response = await this.geminiClient.generateResponse(promptWithContext);
-      
-      // Add assistant response to history
-      this.contextManager.addAssistantMessage(response);
-      
-      console.log(`\n🧪 Berkelium: ${response}\n`);
+      await this.runAgenticLoop();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error(`❌ Error: ${errorMessage}\n`);
+    }
+  }
+
+  /**
+   * Core agentic loop that handles AI responses and tool execution
+   */
+  private async runAgenticLoop(): Promise<void> {
+    let maxIterations = 10; // Prevent infinite loops
+    
+    while (maxIterations > 0) {
+      console.log('🤔 Thinking...');
+      
+      // Get response from Gemini with conversation history
+      const result = await this.geminiClient.generateContentWithHistory(
+        this.contextManager.getChatHistory()
+      );
+      
+      const response = await result.response;
+      const responseParts = response.candidates?.[0]?.content?.parts || [];
+      
+      // Add the model's response to history
+      this.contextManager.addModelMessage(responseParts);
+      
+      // Check if there are any function calls to execute
+      const functionCalls = responseParts.filter(part => part.functionCall);
+      
+      if (functionCalls.length === 0) {
+        // No function calls, display the text response and exit loop
+        const textParts = responseParts.filter(part => part.text);
+        if (textParts.length > 0) {
+          const text = textParts.map(part => part.text).join('');
+          console.log(`\n🧪 Berkelium: ${text}\n`);
+        }
+        break;
+      }
+      
+      // Execute each function call
+      for (const part of functionCalls) {
+        if (part.functionCall) {
+          await this.executeFunctionCall(part.functionCall);
+        }
+      }
+      
+      maxIterations--;
+    }
+    
+    if (maxIterations === 0) {
+      console.log('\n⚠️ Maximum iterations reached. Stopping agentic loop.\n');
+    }
+  }
+
+  /**
+   * Execute a function call and add the result to conversation history
+   */
+  private async executeFunctionCall(functionCall: FunctionCall): Promise<void> {
+    try {
+      const { name: functionName, args } = functionCall;
+      
+      console.log(`🔧 Executing tool: ${functionName}`);
+      
+      // Execute the tool
+      const result = await executeTool(functionName as ToolName, args || {});
+      
+      // Add function response to history
+      this.contextManager.addFunctionResponse(functionName, result);
+      
+      // Display tool execution result
+      if (result.success) {
+        console.log(`✅ Tool executed successfully`);
+        if (result.output) {
+          console.log(`📄 Output: ${result.output.substring(0, 200)}${result.output.length > 200 ? '...' : ''}`);
+        }
+      } else {
+        console.log(`❌ Tool execution failed: ${result.error}`);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`❌ Function execution error: ${errorMessage}`);
+      
+      // Add error response to history
+      this.contextManager.addFunctionResponse(functionCall.name, {
+        success: false,
+        output: '',
+        error: errorMessage
+      });
     }
   }
 
