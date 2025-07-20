@@ -5,6 +5,7 @@ import { GeminiClient } from './gemini-client';
 import { ContextManager } from './context-manager';
 import { executeTool, ToolName } from './tools';
 import { FunctionCall } from '@google/generative-ai';
+import { ProgressIndicator } from './utils/progress';
 
 /**
  * Main Berkelium CLI application
@@ -72,39 +73,47 @@ class BerkeliumCLI {
    */
   private async runAgenticLoop(): Promise<void> {
     let maxIterations = 10; // Prevent infinite loops
+    const progress = new ProgressIndicator();
     
     while (maxIterations > 0) {
-      console.log('🤔 Thinking...');
+      progress.start('Thinking');
       
-      // Get response from Gemini with conversation history
-      const result = await this.geminiClient.generateContentWithHistory(
-        this.contextManager.getChatHistory()
-      );
-      
-      const response = await result.response;
-      const responseParts = response.candidates?.[0]?.content?.parts || [];
-      
-      // Add the model's response to history
-      this.contextManager.addModelMessage(responseParts);
-      
-      // Check if there are any function calls to execute
-      const functionCalls = responseParts.filter(part => part.functionCall);
-      
-      if (functionCalls.length === 0) {
-        // No function calls, display the text response and exit loop
-        const textParts = responseParts.filter(part => part.text);
-        if (textParts.length > 0) {
-          const text = textParts.map(part => part.text).join('');
-          console.log(`\n🧪 Berkelium: ${text}\n`);
+      try {
+        // Get response from Gemini with conversation history
+        const result = await this.geminiClient.generateContentWithHistory(
+          this.contextManager.getChatHistory()
+        );
+        
+        progress.stop();
+        
+        const response = await result.response;
+        const responseParts = response.candidates?.[0]?.content?.parts || [];
+        
+        // Add the model's response to history
+        this.contextManager.addModelMessage(responseParts);
+        
+        // Check if there are any function calls to execute
+        const functionCalls = responseParts.filter(part => part.functionCall);
+        
+        if (functionCalls.length === 0) {
+          // No function calls, display the text response and exit loop
+          const textParts = responseParts.filter(part => part.text);
+          if (textParts.length > 0) {
+            const text = textParts.map(part => part.text).join('');
+            console.log(`\n🧪 Berkelium: ${text}\n`);
+          }
+          break;
         }
-        break;
-      }
-      
-      // Execute each function call
-      for (const part of functionCalls) {
-        if (part.functionCall) {
-          await this.executeFunctionCall(part.functionCall);
+        
+        // Execute each function call
+        for (const part of functionCalls) {
+          if (part.functionCall) {
+            await this.executeFunctionCall(part.functionCall);
+          }
         }
+      } catch (error) {
+        progress.stop();
+        throw error;
       }
       
       maxIterations--;
@@ -119,27 +128,32 @@ class BerkeliumCLI {
    * Execute a function call and add the result to conversation history
    */
   private async executeFunctionCall(functionCall: FunctionCall): Promise<void> {
+    const progress = new ProgressIndicator();
+    
     try {
       const { name: functionName, args } = functionCall;
       
-      console.log(`🔧 Executing tool: ${functionName}`);
+      progress.start(`Executing ${functionName}`);
       
       // Execute the tool
       const result = await executeTool(functionName as ToolName, args || {});
+      
+      progress.stop();
       
       // Add function response to history
       this.contextManager.addFunctionResponse(functionName, result);
       
       // Display tool execution result
       if (result.success) {
-        console.log(`✅ Tool executed successfully`);
+        console.log(`✅ ${functionName} executed successfully`);
         if (result.output) {
           console.log(`📄 Output: ${result.output.substring(0, 200)}${result.output.length > 200 ? '...' : ''}`);
         }
       } else {
-        console.log(`❌ Tool execution failed: ${result.error}`);
+        console.log(`❌ ${functionName} execution failed: ${result.error}`);
       }
     } catch (error) {
+      progress.stop();
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error(`❌ Function execution error: ${errorMessage}`);
       

@@ -8,7 +8,7 @@ export * from './fileSystem';
 export * from './shell';
 
 // Tool registry for easy access
-import { readFile, writeFile } from './fileSystem';
+import { readFile, writeFile, listDirectory, createDirectory, deleteFile } from './fileSystem';
 import { runCommand } from './shell';
 import { ToolName, ToolResult } from './declarations';
 
@@ -18,6 +18,9 @@ import { ToolName, ToolResult } from './declarations';
 export const availableTools = {
   readFile,
   writeFile,
+  listDirectory,
+  createDirectory,
+  deleteFile,
   runCommand
 };
 
@@ -38,6 +41,21 @@ export async function executeTool(
         args.content, 
         args.createDirectories ?? true
       );
+    
+    case 'listDirectory':
+      return listDirectory(
+        args.directoryPath,
+        args.showHidden ?? false
+      );
+    
+    case 'createDirectory':
+      return createDirectory(
+        args.directoryPath,
+        args.recursive ?? true
+      );
+    
+    case 'deleteFile':
+      return deleteFile(args.filePath);
     
     case 'runCommand':
       return runCommand(args.command, args.workingDirectory);
