@@ -2,6 +2,7 @@ import { Content, Part } from '@google/generative-ai';
 import { ContextDiscovery } from './utils/context-discovery';
 import { UserContextParser } from './utils/user-context';
 import { ProjectInstructions } from './utils/project-instructions';
+import { ConversationSummarizer } from './utils/conversation-summarizer';
 import { logger } from './utils/logger';
 
 /**
@@ -20,6 +21,11 @@ export interface ChatMessage {
 export class ContextManager {
   private chatHistory: Content[] = [];
   private autoContextEnabled: boolean = true;
+  private conversationSummarizer: ConversationSummarizer;
+
+  constructor() {
+    this.conversationSummarizer = new ConversationSummarizer();
+  }
 
   /**
    * Enable or disable automatic context discovery
@@ -138,6 +144,34 @@ export class ContextManager {
   }
 
   /**
+   * Get optimized chat history with summarization for large conversations
+   */
+  async getOptimizedChatHistory(geminiClient?: any): Promise<Content[]> {
+    if (!geminiClient || !this.conversationSummarizer.shouldSummarize(this.chatHistory)) {
+      return this.getChatHistory();
+    }
+
+    try {
+      const optimizedHistory = await this.conversationSummarizer.optimizeHistory(
+        this.chatHistory, 
+        geminiClient
+      );
+      
+      logger.debug('CONTEXT', 'Using optimized chat history', {
+        originalLength: this.chatHistory.length,
+        optimizedLength: optimizedHistory.length
+      });
+      
+      return optimizedHistory;
+    } catch (error) {
+      logger.warn('CONTEXT', 'Failed to optimize chat history, using original', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      return this.getChatHistory();
+    }
+  }
+
+  /**
    * Get a formatted conversation context for display
    */
   getConversationContext(): string {
@@ -184,5 +218,36 @@ export class ContextManager {
    */
   clearProjectInstructionsCache(): void {
     ProjectInstructions.clearCache();
+  }
+
+  /**
+   * Configure conversation summarization settings
+   */
+  configureSummarization(config: Partial<import('./utils/conversation-summarizer').SummarizationConfig>): void {
+    this.conversationSummarizer.updateConfig(config);
+    logger.info('CONTEXT', 'Summarization configuration updated', { config });
+  }
+
+  /**
+   * Clear conversation summary cache
+   */
+  clearSummaryCache(): void {
+    this.conversationSummarizer.clearCache();
+    logger.debug('CONTEXT', 'Summary cache cleared');
+  }
+
+  /**
+   * Get conversation summarization statistics
+   */
+  getSummarizationStats(): { 
+    shouldSummarize: boolean; 
+    messageCount: number; 
+    cacheStats: { entries: number; totalSize: number } 
+  } {
+    return {
+      shouldSummarize: this.conversationSummarizer.shouldSummarize(this.chatHistory),
+      messageCount: this.chatHistory.length,
+      cacheStats: this.conversationSummarizer.getCacheStats()
+    };
   }
 }

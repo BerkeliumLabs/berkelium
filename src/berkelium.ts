@@ -102,6 +102,21 @@ class BerkeliumCLI {
         this.contextManager.clearProjectInstructionsCache();
         console.log('🗑️ Project instructions cache cleared');
         return true;
+
+      case 'conversation stats':
+      case 'conv stats':
+        this.showConversationStats();
+        return true;
+
+      case 'clear summary cache':
+        this.contextManager.clearSummaryCache();
+        console.log('🗑️ Conversation summary cache cleared');
+        return true;
+
+      case 'configure summarization':
+      case 'config summary':
+        this.showSummarizationConfig();
+        return true;
         
       case 'help':
         this.showHelp();
@@ -141,6 +156,36 @@ class BerkeliumCLI {
   }
 
   /**
+   * Show conversation statistics and summarization status
+   */
+  private showConversationStats(): void {
+    const stats = this.contextManager.getSummarizationStats();
+    
+    console.log('\n💬 Conversation Statistics:');
+    console.log(`Messages in History: ${stats.messageCount}`);
+    console.log(`Needs Summarization: ${stats.shouldSummarize ? '✅ Yes' : '❌ No'}`);
+    console.log(`Summary Cache Entries: ${stats.cacheStats.entries}`);
+    console.log(`Cache Size: ${(stats.cacheStats.totalSize / 1024).toFixed(1)} KB`);
+    console.log('');
+  }
+
+  /**
+   * Show summarization configuration
+   */
+  private showSummarizationConfig(): void {
+    console.log('\n⚙️ Conversation Summarization Configuration:');
+    console.log('Current settings:');
+    console.log('• Max History Messages: 20 (before summarization kicks in)');
+    console.log('• Summarization Threshold: 15 messages');
+    console.log('• Keep Recent Messages: 10 (unsummarized)');
+    console.log('• Max Tokens Per Message: ~1000');
+    console.log('');
+    console.log('💡 Summarization automatically optimizes long conversations');
+    console.log('   to maintain context while staying within token limits.');
+    console.log('');
+  }
+
+  /**
    * Show help information
    */
   private showHelp(): void {
@@ -155,6 +200,9 @@ Available Commands:
   • debug off            - Disable debug console output
   • project info         - Show project instructions status
   • clear project cache  - Clear project instructions cache
+  • conversation stats   - Show conversation summarization status
+  • clear summary cache  - Clear conversation summary cache
+  • config summary       - Show summarization configuration
   • help                 - Show this help message
   • exit, quit           - Exit Berkelium
 
@@ -211,10 +259,9 @@ Examples:
       progress.start('Thinking');
       
       try {
-        // Get response from Gemini with conversation history
-        const result = await this.geminiClient.generateContentWithHistory(
-          this.contextManager.getChatHistory()
-        );
+        // Get optimized response from Gemini with conversation history (with summarization if needed)
+        const optimizedHistory = await this.contextManager.getOptimizedChatHistory(this.geminiClient);
+        const result = await this.geminiClient.generateContentWithHistory(optimizedHistory);
         
         progress.stop();
         
