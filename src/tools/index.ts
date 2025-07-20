@@ -7,9 +7,13 @@ export * from './fileSystem';
 // Shell tools
 export * from './shell';
 
+// Web search tools
+export * from './webSearch';
+
 // Tool registry for easy access
 import { readFile, writeFile, listDirectory, createDirectory, deleteFile } from './fileSystem';
 import { runCommand } from './shell';
+import { webSearch } from './webSearch';
 import { ToolName, ToolResult } from './declarations';
 
 /**
@@ -21,7 +25,8 @@ export const availableTools = {
   listDirectory,
   createDirectory,
   deleteFile,
-  runCommand
+  runCommand,
+  webSearch
 };
 
 /**
@@ -59,6 +64,9 @@ export async function executeTool(
     
     case 'runCommand':
       return runCommand(args.command, args.workingDirectory);
+    
+    case 'webSearch':
+      return webSearch(args.query, args.maxResults);
     
     default:
       return {

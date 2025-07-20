@@ -107,13 +107,31 @@ export const toolDeclarations: FunctionDeclaration[] = [
       },
       required: ['command']
     }
+  },
+  {
+    name: 'webSearch',
+    description: 'Search the web for real-time information. Use this when the user asks about current events, recent information, or when you need up-to-date data that may not be in your training data.',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        query: {
+          type: SchemaType.STRING,
+          description: 'The search query to find information about'
+        },
+        maxResults: {
+          type: SchemaType.NUMBER,
+          description: 'Maximum number of search results to return (default: 10, max: 20)'
+        }
+      },
+      required: ['query']
+    }
   }
 ];
 
 /**
  * Available tool names for type checking
  */
-export type ToolName = 'readFile' | 'writeFile' | 'listDirectory' | 'createDirectory' | 'deleteFile' | 'runCommand';
+export type ToolName = 'readFile' | 'writeFile' | 'listDirectory' | 'createDirectory' | 'deleteFile' | 'runCommand' | 'webSearch';
 
 /**
  * Tool execution result interface

@@ -117,6 +117,11 @@ class BerkeliumCLI {
       case 'config summary':
         this.showSummarizationConfig();
         return true;
+
+      case 'web search config':
+      case 'websearch config':
+        this.showWebSearchConfig();
+        return true;
         
       case 'help':
         this.showHelp();
@@ -186,6 +191,27 @@ class BerkeliumCLI {
   }
 
   /**
+   * Show web search configuration
+   */
+  private showWebSearchConfig(): void {
+    console.log('\n🔍 Web Search Configuration:');
+    console.log('Current settings:');
+    console.log('• Provider: DuckDuckGo (default - no API key required)');
+    console.log('• Max Results: 10 per search');
+    console.log('• Language: English');
+    console.log('• Region: US');
+    console.log('');
+    console.log('📋 Available providers:');
+    console.log('• DuckDuckGo - Free, no API key required');
+    console.log('• Google Custom Search - Requires API key and search engine ID');
+    console.log('• Bing Search - Requires API key');
+    console.log('');
+    console.log('💡 Web search allows the AI to fetch current information');
+    console.log('   from the internet when answering questions.');
+    console.log('');
+  }
+
+  /**
    * Show help information
    */
   private showHelp(): void {
@@ -203,6 +229,7 @@ Available Commands:
   • conversation stats   - Show conversation summarization status
   • clear summary cache  - Clear conversation summary cache
   • config summary       - Show summarization configuration
+  • websearch config     - Show web search configuration
   • help                 - Show this help message
   • exit, quit           - Exit Berkelium
 
@@ -210,6 +237,7 @@ Special Syntax:
   • @filename            - Include file content in your message
   • Automatic context    - Relevant files are included automatically
   • Project instructions - BERKELIUM.md files are auto-included
+  • Web search           - AI can search the web for current information
 
 Project Instructions:
   Create a .berkelium/BERKELIUM.md file in your project root to provide
