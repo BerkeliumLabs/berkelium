@@ -1,4 +1,7 @@
 import { Content, Part } from '@google/generative-ai';
+import { ContextDiscovery } from './utils/context-discovery';
+import { UserContextParser } from './utils/user-context';
+import { logger } from './utils/logger';
 
 /**
  * Represents a single message in the conversation
@@ -15,14 +18,72 @@ export interface ChatMessage {
  */
 export class ContextManager {
   private chatHistory: Content[] = [];
+  private autoContextEnabled: boolean = true;
 
   /**
-   * Add a user message to the history
+   * Enable or disable automatic context discovery
    */
-  addUserMessage(content: string): void {
+  setAutoContext(enabled: boolean): void {
+    this.autoContextEnabled = enabled;
+  }
+
+  /**
+   * Add a user message to the history with optional auto-context
+   */
+  async addUserMessage(content: string): Promise<void> {
+    logger.debug('CONTEXT', 'Adding user message', { 
+      contentLength: content.length,
+      autoContextEnabled: this.autoContextEnabled 
+    });
+    
+    let enhancedContent = content;
+
+    // First, process user-defined context (@file_name syntax)
+    if (UserContextParser.hasFileReferences(content)) {
+      logger.debug('CONTEXT', 'Processing file references in user input');
+      enhancedContent = await UserContextParser.processUserInput(content);
+      console.log('📎 Processed file references in your message');
+      logger.info('CONTEXT', 'File references processed', { 
+        originalLength: content.length, 
+        enhancedLength: enhancedContent.length 
+      });
+    }
+
+    // Add automatic context if enabled (and no user-defined context was used)
+    if (this.autoContextEnabled && !UserContextParser.hasFileReferences(content)) {
+      try {
+        logger.debug('CONTEXT', 'Discovering relevant files for auto-context');
+        const relevantFiles = await ContextDiscovery.discoverRelevantFiles();
+        if (relevantFiles.length > 0) {
+          const fileContext = await ContextDiscovery.prepareFileContext(relevantFiles.slice(0, 5)); // Limit to 5 files
+          if (fileContext) {
+            enhancedContent = `${enhancedContent}${fileContext}`;
+            // Only show context message if debug is enabled or if it's significant
+            if (relevantFiles.length >= 3) {
+              console.log(`📁 Added context from ${relevantFiles.length} relevant files`);
+            }
+            logger.info('CONTEXT', 'Auto-context added', { 
+              fileCount: relevantFiles.length,
+              finalContentLength: enhancedContent.length 
+            });
+          }
+        }
+      } catch (error) {
+        // If context discovery fails, continue with original content
+        logger.warn('CONTEXT', 'Failed to add auto-context', { 
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        });
+        // Don't show debug messages to user unless debug is enabled
+      }
+    }
+
     this.chatHistory.push({
       role: 'user',
-      parts: [{ text: content }]
+      parts: [{ text: enhancedContent }]
+    });
+    
+    logger.debug('CONTEXT', 'User message added to history', { 
+      historyLength: this.chatHistory.length 
     });
   }
 

@@ -3,6 +3,7 @@ import { constants } from 'fs';
 import { resolve, dirname, join } from 'path';
 import confirm from '@inquirer/confirm';
 import { ToolResult } from './declarations';
+import { ErrorHandler, ErrorCategory } from '../utils/error-handler';
 
 /**
  * Read the contents of a file from the local file system
@@ -23,28 +24,15 @@ export async function readFile(filePath: string): Promise<ToolResult> {
       output: content
     };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
-    if (errorMessage.includes('ENOENT')) {
-      return {
-        success: false,
-        output: '',
-        error: `File not found: ${filePath}`
-      };
-    }
-    
-    if (errorMessage.includes('EACCES')) {
-      return {
-        success: false,
-        output: '',
-        error: `Permission denied: Cannot read file ${filePath}`
-      };
-    }
+    const berkeliumError = ErrorHandler.handle(error, ErrorCategory.FILE_SYSTEM_ERROR, { 
+      operation: 'readFile', 
+      filePath 
+    });
     
     return {
       success: false,
       output: '',
-      error: `Failed to read file ${filePath}: ${errorMessage}`
+      error: berkeliumError.message
     };
   }
 }

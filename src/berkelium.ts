@@ -6,6 +6,8 @@ import { ContextManager } from './context-manager';
 import { executeTool, ToolName } from './tools';
 import { FunctionCall } from '@google/generative-ai';
 import { ProgressIndicator } from './utils/progress';
+import { ErrorHandler, ErrorCategory } from './utils/error-handler';
+import { logger } from './utils/logger';
 
 /**
  * Main Berkelium CLI application
@@ -18,6 +20,10 @@ class BerkeliumCLI {
   constructor() {
     this.geminiClient = new GeminiClient();
     this.contextManager = new ContextManager();
+    
+    // Initialize logging
+    logger.initializeFileLogging().catch(console.error);
+    logger.logSystemEvent('Berkelium CLI started');
   }
 
   /**
@@ -25,7 +31,7 @@ class BerkeliumCLI {
    */
   async start(): Promise<void> {
     console.log('🧪 Welcome to Berkelium - Agentic AI Code Assistant');
-    console.log('Type your questions or commands. Use "exit" or "quit" to leave.\n');
+    console.log('Type your questions or commands. Use "help" for available commands, "exit" or "quit" to leave.\n');
 
     while (this.isRunning) {
       try {
@@ -37,6 +43,11 @@ class BerkeliumCLI {
         if (this.shouldExit(userInput)) {
           this.exit();
           break;
+        }
+
+        // Handle special commands
+        if (this.handleSpecialCommands(userInput)) {
+          continue;
         }
 
         // Send prompt to Gemini and display response
@@ -54,17 +65,86 @@ class BerkeliumCLI {
   }
 
   /**
+   * Handle special built-in commands
+   */
+  private handleSpecialCommands(input: string): boolean {
+    const trimmed = input.trim().toLowerCase();
+    
+    switch (trimmed) {
+      case 'show logs':
+      case 'logs':
+        logger.showLogsToUser();
+        return true;
+        
+      case 'show errors':
+      case 'errors':
+        logger.showErrorLogsToUser();
+        return true;
+        
+      case 'enable debug':
+      case 'debug on':
+        logger.setConsoleOutput(true);
+        console.log('🔍 Debug logging enabled - logs will now appear in console');
+        return true;
+        
+      case 'disable debug':
+      case 'debug off':
+        logger.setConsoleOutput(false);
+        console.log('🔇 Debug logging disabled - logs will only be saved to file');
+        return true;
+        
+      case 'help':
+        this.showHelp();
+        return true;
+        
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Show help information
+   */
+  private showHelp(): void {
+    console.log(`
+🧪 Berkelium - Agentic AI Code Assistant
+
+Available Commands:
+  • Type any question or request for AI assistance
+  • logs, show logs     - View recent log entries
+  • errors, show errors - View error logs only
+  • debug on           - Enable debug console output
+  • debug off          - Disable debug console output  
+  • help               - Show this help message
+  • exit, quit         - Exit Berkelium
+
+Special Syntax:
+  • @filename          - Include file content in your message
+  • Automatic context  - Relevant files are included automatically
+
+Examples:
+  > Read the package.json file
+  > Create a new Express server in server.js
+  > @src/main.ts explain this file
+  > logs
+    `);
+  }
+
+  /**
    * Handle user input by sending it to Gemini and processing any tool calls
    */
   private async handleUserInput(userInput: string): Promise<void> {
     try {
-      // Add user message to history
-      this.contextManager.addUserMessage(userInput);
+      logger.debug('USER_INPUT', 'Processing user input', { inputLength: userInput.length });
+      
+      // Add user message to history with auto-context
+      await this.contextManager.addUserMessage(userInput);
 
       await this.runAgenticLoop();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`❌ Error: ${errorMessage}\n`);
+      const berkeliumError = ErrorHandler.handle(error, ErrorCategory.USER_INPUT_ERROR);
+      logger.error('USER_INPUT', 'Failed to handle user input', { error: berkeliumError.message });
+      console.error(ErrorHandler.getUserFriendlyMessage(berkeliumError));
     }
   }
 
@@ -75,7 +155,14 @@ class BerkeliumCLI {
     let maxIterations = 10; // Prevent infinite loops
     const progress = new ProgressIndicator();
     
+    logger.debug('AGENTIC_LOOP', 'Starting agentic loop', { maxIterations });
+    
     while (maxIterations > 0) {
+      logger.debug('AGENTIC_LOOP', `Starting iteration`, { 
+        iteration: 11 - maxIterations, 
+        remainingIterations: maxIterations 
+      });
+      
       progress.start('Thinking');
       
       try {
@@ -89,6 +176,12 @@ class BerkeliumCLI {
         const response = await result.response;
         const responseParts = response.candidates?.[0]?.content?.parts || [];
         
+        logger.debug('AI_RESPONSE', 'Received AI response', { 
+          partCount: responseParts.length,
+          hasText: responseParts.some(part => part.text),
+          hasFunctionCalls: responseParts.some(part => part.functionCall)
+        });
+        
         // Add the model's response to history
         this.contextManager.addModelMessage(responseParts);
         
@@ -101,9 +194,16 @@ class BerkeliumCLI {
           if (textParts.length > 0) {
             const text = textParts.map(part => part.text).join('');
             console.log(`\n🧪 Berkelium: ${text}\n`);
+            logger.info('AI_RESPONSE', 'AI provided text response without function calls', { 
+              responseLength: text.length 
+            });
           }
           break;
         }
+        
+        logger.info('TOOL_EXECUTION', 'Executing function calls', { 
+          functionCallCount: functionCalls.length 
+        });
         
         // Execute each function call
         for (const part of functionCalls) {
@@ -113,15 +213,24 @@ class BerkeliumCLI {
         }
       } catch (error) {
         progress.stop();
-        throw error;
+        const berkeliumError = ErrorHandler.handle(error, ErrorCategory.API_ERROR);
+        logger.error('AGENTIC_LOOP', 'Error in agentic loop iteration', { 
+          iteration: 11 - maxIterations,
+          error: berkeliumError.message 
+        });
+        console.error(ErrorHandler.getUserFriendlyMessage(berkeliumError));
+        break;
       }
       
       maxIterations--;
     }
     
     if (maxIterations === 0) {
+      logger.warn('AGENTIC_LOOP', 'Maximum iterations reached');
       console.log('\n⚠️ Maximum iterations reached. Stopping agentic loop.\n');
     }
+    
+    logger.debug('AGENTIC_LOOP', 'Agentic loop completed');
   }
 
   /**
@@ -129,6 +238,10 @@ class BerkeliumCLI {
    */
   private async executeFunctionCall(functionCall: FunctionCall): Promise<void> {
     const progress = new ProgressIndicator();
+    
+    logger.debug('TOOL_EXECUTION', `Starting function execution: ${functionCall.name}`, { 
+      args: functionCall.args 
+    });
     
     try {
       const { name: functionName, args } = functionCall;
@@ -139,6 +252,12 @@ class BerkeliumCLI {
       const result = await executeTool(functionName as ToolName, args || {});
       
       progress.stop();
+      
+      logger.info('TOOL_EXECUTION', `Function ${functionName} executed`, { 
+        success: result.success,
+        hasOutput: !!result.output,
+        outputLength: result.output?.length || 0
+      });
       
       // Add function response to history
       this.contextManager.addFunctionResponse(functionName, result);
@@ -154,14 +273,23 @@ class BerkeliumCLI {
       }
     } catch (error) {
       progress.stop();
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`❌ Function execution error: ${errorMessage}`);
+      const berkeliumError = ErrorHandler.handle(error, ErrorCategory.TOOL_ERROR, {
+        functionName: functionCall.name,
+        args: functionCall.args
+      });
+      
+      logger.error('TOOL_EXECUTION', `Function ${functionCall.name} failed with error`, { 
+        error: berkeliumError.message,
+        args: functionCall.args
+      });
+      
+      console.error(ErrorHandler.getUserFriendlyMessage(berkeliumError));
       
       // Add error response to history
       this.contextManager.addFunctionResponse(functionCall.name, {
         success: false,
         output: '',
-        error: errorMessage
+        error: berkeliumError.message
       });
     }
   }

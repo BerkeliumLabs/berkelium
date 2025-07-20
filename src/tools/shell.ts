@@ -3,6 +3,7 @@ import { promisify } from 'util';
 import { resolve } from 'path';
 import confirm from '@inquirer/confirm';
 import { ToolResult } from './declarations';
+import { ErrorHandler, ErrorCategory } from '../utils/error-handler';
 
 const execAsync = promisify(exec);
 
@@ -103,10 +104,14 @@ export async function runCommand(
       output: output.trim()
     };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
-    // Handle timeout errors
-    if (errorMessage.includes('timeout')) {
+    const berkeliumError = ErrorHandler.handle(error, ErrorCategory.SHELL_ERROR, {
+      operation: 'runCommand',
+      command,
+      workingDirectory
+    });
+
+    // Handle specific error types
+    if (berkeliumError.message.includes('timeout')) {
       return {
         success: false,
         output: '',
@@ -135,7 +140,7 @@ export async function runCommand(
     return {
       success: false,
       output: '',
-      error: `Failed to execute command: ${errorMessage}`
+      error: berkeliumError.message
     };
   }
 }
