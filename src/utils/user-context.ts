@@ -35,20 +35,17 @@ export class UserContextParser {
         const content = await readFile(filePath, 'utf-8');
         const filename = basename(filePath);
         
-        // Replace the @file reference with a placeholder
-        processedInput = processedInput.replace(
-          new RegExp(`@${fileRef.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
-          `[file: ${filename}]`
-        );
+        // Simple replacement using the original @fileRef pattern
+        // Find the exact @fileRef in the input and replace it
+        const searchPattern = `@${fileRef}`;
+        processedInput = processedInput.replace(searchPattern, `[file: ${filename}]`);
 
         // Add file content to the context
         fileContents.push(`=== Content of ${filename} ===\n${content}\n=== End of ${filename} ===`);
       } catch (error) {
         // If file can't be read, replace with error message
-        processedInput = processedInput.replace(
-          new RegExp(`@${fileRef.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
-          `[file: ${fileRef} - ERROR: Could not read file]`
-        );
+        const searchPattern = `@${fileRef}`;
+        processedInput = processedInput.replace(searchPattern, `[file: ${fileRef} - ERROR: Could not read file]`);
       }
     }
 
