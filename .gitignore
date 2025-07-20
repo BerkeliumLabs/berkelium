@@ -1,0 +1,11 @@
+# Berkelium
+
+node_modules/
+dist/
+test/
+*.log
+.env
+.env.local
+.env.example
+.DS_Store
+Thumbs.db
