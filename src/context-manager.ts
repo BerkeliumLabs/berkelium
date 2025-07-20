@@ -1,6 +1,7 @@
 import { Content, Part } from '@google/generative-ai';
 import { ContextDiscovery } from './utils/context-discovery';
 import { UserContextParser } from './utils/user-context';
+import { ProjectInstructions } from './utils/project-instructions';
 import { logger } from './utils/logger';
 
 /**
@@ -38,10 +39,27 @@ export class ContextManager {
     
     let enhancedContent = content;
 
-    // First, process user-defined context (@file_name syntax)
+    // First, add project-specific instructions if available
+    try {
+      const projectInstructions = await ProjectInstructions.loadProjectInstructions();
+      if (projectInstructions) {
+        const formattedInstructions = ProjectInstructions.formatInstructionsForContext(projectInstructions);
+        enhancedContent = `${enhancedContent}${formattedInstructions}`;
+        console.log('📋 Added project-specific instructions');
+        logger.info('CONTEXT', 'Project instructions added', { 
+          instructionsLength: projectInstructions.length 
+        });
+      }
+    } catch (error) {
+      logger.warn('CONTEXT', 'Failed to load project instructions', { 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+
+    // Second, process user-defined context (@file_name syntax)
     if (UserContextParser.hasFileReferences(content)) {
       logger.debug('CONTEXT', 'Processing file references in user input');
-      enhancedContent = await UserContextParser.processUserInput(content);
+      enhancedContent = await UserContextParser.processUserInput(enhancedContent);
       console.log('📎 Processed file references in your message');
       logger.info('CONTEXT', 'File references processed', { 
         originalLength: content.length, 
@@ -49,7 +67,7 @@ export class ContextManager {
       });
     }
 
-    // Add automatic context if enabled (and no user-defined context was used)
+    // Third, add automatic context if enabled (and no user-defined context was used)
     if (this.autoContextEnabled && !UserContextParser.hasFileReferences(content)) {
       try {
         logger.debug('CONTEXT', 'Discovering relevant files for auto-context');
@@ -145,5 +163,26 @@ export class ContextManager {
    */
   getHistoryLength(): number {
     return this.chatHistory.length;
+  }
+
+  /**
+   * Check if project instructions are available
+   */
+  async hasProjectInstructions(): Promise<boolean> {
+    return await ProjectInstructions.hasProjectInstructions();
+  }
+
+  /**
+   * Get the path to project instructions file if it exists
+   */
+  async getProjectInstructionsPath(): Promise<string | null> {
+    return await ProjectInstructions.getProjectInstructionsPath();
+  }
+
+  /**
+   * Clear project instructions cache (useful for development/testing)
+   */
+  clearProjectInstructionsCache(): void {
+    ProjectInstructions.clearCache();
   }
 }

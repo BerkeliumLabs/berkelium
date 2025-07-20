@@ -92,6 +92,16 @@ class BerkeliumCLI {
         logger.setConsoleOutput(false);
         console.log('🔇 Debug logging disabled - logs will only be saved to file');
         return true;
+
+      case 'show project':
+      case 'project info':
+        this.showProjectInfo();
+        return true;
+
+      case 'clear project cache':
+        this.contextManager.clearProjectInstructionsCache();
+        console.log('🗑️ Project instructions cache cleared');
+        return true;
         
       case 'help':
         this.showHelp();
@@ -103,6 +113,34 @@ class BerkeliumCLI {
   }
 
   /**
+   * Show project information and instructions status
+   */
+  async showProjectInfo(): Promise<void> {
+    console.log('\n📋 Project Information:');
+    console.log(`Working Directory: ${process.cwd()}`);
+    
+    try {
+      const hasInstructions = await this.contextManager.hasProjectInstructions();
+      const instructionsPath = await this.contextManager.getProjectInstructionsPath();
+      
+      if (hasInstructions && instructionsPath) {
+        console.log(`✅ Project Instructions: Found at ${instructionsPath}`);
+        console.log('📝 Instructions will be automatically included in AI context');
+      } else {
+        console.log('❌ Project Instructions: Not found');
+        console.log('💡 To add project instructions:');
+        console.log('   1. Create a .berkelium folder in your project root');
+        console.log('   2. Add a BERKELIUM.md file with your project guidelines');
+        console.log('   3. The instructions will be automatically included in all AI interactions');
+      }
+    } catch (error) {
+      console.log('❌ Error checking project instructions:', error instanceof Error ? error.message : 'Unknown error');
+    }
+    
+    console.log('');
+  }
+
+  /**
    * Show help information
    */
   private showHelp(): void {
@@ -111,22 +149,29 @@ class BerkeliumCLI {
 
 Available Commands:
   • Type any question or request for AI assistance
-  • logs, show logs     - View recent log entries
-  • errors, show errors - View error logs only
-  • debug on           - Enable debug console output
-  • debug off          - Disable debug console output  
-  • help               - Show this help message
-  • exit, quit         - Exit Berkelium
+  • logs, show logs       - View recent log entries
+  • errors, show errors   - View error logs only
+  • debug on             - Enable debug console output
+  • debug off            - Disable debug console output
+  • project info         - Show project instructions status
+  • clear project cache  - Clear project instructions cache
+  • help                 - Show this help message
+  • exit, quit           - Exit Berkelium
 
 Special Syntax:
-  • @filename          - Include file content in your message
-  • Automatic context  - Relevant files are included automatically
+  • @filename            - Include file content in your message
+  • Automatic context    - Relevant files are included automatically
+  • Project instructions - BERKELIUM.md files are auto-included
+
+Project Instructions:
+  Create a .berkelium/BERKELIUM.md file in your project root to provide
+  project-specific guidelines that will be included in every AI interaction.
 
 Examples:
   > Read the package.json file
   > Create a new Express server in server.js
   > @src/main.ts explain this file
-  > logs
+  > project info
     `);
   }
 
