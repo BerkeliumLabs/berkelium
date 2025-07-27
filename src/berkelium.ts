@@ -2,12 +2,19 @@
 
 import { input } from "@inquirer/prompts";
 import chalk from "chalk";
+import { ConfigManager } from './utils/config.js';
 
 class BerkeliumCLI {
   private isRunning = true;
+  private configManager: ConfigManager;
+
+  constructor() {
+    this.configManager = ConfigManager.getInstance();
+  }
 
   async start(): Promise<void> {
     await this.displayWelcome();
+    await this.checkAndConfigureApiKey();
     await this.runREPL();
   }
 
@@ -39,6 +46,37 @@ class BerkeliumCLI {
         'Type your questions or commands. Use "help" for available commands, "exit" or "quit" to leave.\n'
       )
     );
+  }
+
+  /**
+   * Check if API key is configured and prompt for it if not
+   */
+  private async checkAndConfigureApiKey(): Promise<void> {
+    try {
+      if (!this.configManager.isApiKeyConfigured()) {
+        console.log(chalk.yellow('🔑 API key not found. Let\'s set up your Gemini API key.'));
+        console.log(chalk.gray('You can get your API key from: https://makersuite.google.com/app/apikey\n'));
+        
+        const apiKey = await input({ 
+          message: 'Please enter your Gemini API key:',
+          validate: (value: string) => {
+            if (!value.trim()) {
+              return 'API key cannot be empty';
+            }
+            if (!value.startsWith('AIza')) {
+              return 'Invalid API key format. Gemini API keys typically start with "AIza"';
+            }
+            return true;
+          }
+        });
+
+        await this.configManager.saveApiKey(apiKey.trim());
+        console.log(chalk.green('✅ API key saved successfully!\n'));
+      }
+    } catch (error) {
+      console.error(chalk.red('❌ Failed to configure API key:'), error);
+      process.exit(1);
+    }
   }
 
   private async runREPL(): Promise<void> {

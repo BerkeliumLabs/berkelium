@@ -1,15 +1,6 @@
 import { GoogleGenerativeAI, GenerativeModel, GenerateContentResult, Content } from '@google/generative-ai';
 import { toolDeclarations } from './tools/declarations';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-
-interface Config {
-  version: string;
-  createdAt: string;
-  updatedAt: string;
-  geminiApiKey: string;
-}
+import { ConfigManager } from './utils/config.js';
 
 /**
  * Manages the Gemini AI client and model interactions
@@ -17,42 +8,11 @@ interface Config {
 export class GeminiClient {
   private genAI!: GoogleGenerativeAI;
   private model!: GenerativeModel;
-  private configPath: string;
+  private configManager: ConfigManager;
 
   constructor() {
-    this.configPath = path.join(os.homedir(), 'config.json');
+    this.configManager = ConfigManager.getInstance();
     this.initializeClient();
-  }
-
-  /**
-   * Load configuration from config.json in user's home directory
-   */
-  private loadConfig(): Config {
-    try {
-      if (!fs.existsSync(this.configPath)) {
-        throw new Error(
-          `Configuration file not found at ${this.configPath}. ` +
-          'Please create a config.json file in your home directory with your Gemini API key.'
-        );
-      }
-
-      const configData = fs.readFileSync(this.configPath, 'utf8');
-      const config: Config = JSON.parse(configData);
-
-      if (!config.geminiApiKey) {
-        throw new Error(
-          'geminiApiKey is missing from config.json. ' +
-          'Please add your Google Gemini API key to the configuration file.'
-        );
-      }
-
-      return config;
-    } catch (error) {
-      if (error instanceof SyntaxError) {
-        throw new Error(`Invalid JSON in config file at ${this.configPath}. Please check the file format.`);
-      }
-      throw error;
-    }
   }
 
   /**
@@ -60,8 +20,7 @@ export class GeminiClient {
    */
   private initializeClient(): void {
     try {
-      const config = this.loadConfig();
-      const apiKey = config.geminiApiKey;
+      const apiKey = this.configManager.getApiKey();
 
       this.genAI = new GoogleGenerativeAI(apiKey);
       this.model = this.genAI.getGenerativeModel({ 
