@@ -2,8 +2,9 @@
 
 import { input } from "@inquirer/prompts";
 import chalk from "chalk";
-import { ConfigManager } from './utils/config.js';
+import { ConfigManager } from "./utils/config.js";
 import { GeminiClient } from "./gemini-client.js";
+import boxen from "boxen";
 
 class BerkeliumCLI {
   private isRunning = true;
@@ -57,27 +58,35 @@ class BerkeliumCLI {
   private async checkAndConfigureApiKey(): Promise<void> {
     try {
       if (!this.configManager.isApiKeyConfigured()) {
-        console.log(chalk.yellow('🔑 API key not found. Let\'s set up your Gemini API key.'));
-        console.log(chalk.gray('You can get your API key from: https://makersuite.google.com/app/apikey\n'));
-        
-        const apiKey = await input({ 
-          message: 'Please enter your Gemini API key:',
+        console.log(
+          chalk.yellow(
+            "🔑 API key not found. Let's set up your Gemini API key."
+          )
+        );
+        console.log(
+          chalk.gray(
+            "You can get your API key from: https://makersuite.google.com/app/apikey\n"
+          )
+        );
+
+        const apiKey = await input({
+          message: "Please enter your Gemini API key:",
           validate: (value: string) => {
             if (!value.trim()) {
-              return 'API key cannot be empty';
+              return "API key cannot be empty";
             }
-            if (!value.startsWith('AIza')) {
+            if (!value.startsWith("AIza")) {
               return 'Invalid API key format. Gemini API keys typically start with "AIza"';
             }
             return true;
-          }
+          },
         });
 
         await this.configManager.saveApiKey(apiKey.trim());
-        console.log(chalk.green('✅ API key saved successfully!\n'));
+        console.log(chalk.green("✅ API key saved successfully!\n"));
       }
     } catch (error) {
-      console.error(chalk.red('❌ Failed to configure API key:'), error);
+      console.error(chalk.red("❌ Failed to configure API key:"), error);
       process.exit(1);
     }
   }
@@ -85,19 +94,25 @@ class BerkeliumCLI {
   private async runREPL(): Promise<void> {
     while (this.isRunning) {
       try {
-        // Ensure clean line before prompt
-        process.stdout.write('\n');
-        const userInput = await input({ 
-          message: chalk.green("> "),
+        const userInput = await input({
+          message: "",
           theme: {
-            prefix: {
-              idle: chalk.green("?"),
-              done: chalk.green("✓")
-            },
+            prefix: "",
             style: {
-              message: (text: string) => text
-            }
-          }
+              message: (text: string, status: 'idle' | 'done' | 'loading') => {
+                if (status === 'loading') {
+                  return boxen(`> ${text}`, {
+                    width: process.stdout.columns || 80,
+                    padding: { left: 2, right: 2 },
+                    borderStyle: 'round',
+                    borderColor: 'cyan',
+                    float: 'center',
+                  });
+                }
+                return `${status}> ${text}`;
+              }
+            },
+          },
         });
         await this.processCommand(userInput.trim());
       } catch (error: Error | any) {
@@ -129,7 +144,7 @@ class BerkeliumCLI {
   }
 
   private showHelp(): void {
-    console.log(chalk.cyan("\nAvailable commands:"));
+    console.log(chalk.cyan("Available commands:"));
     console.log(chalk.white("  help  - Show this help message"));
     console.log(chalk.white("  exit  - Exit the application"));
     console.log(chalk.white("  quit  - Exit the application\n"));
@@ -144,12 +159,13 @@ class BerkeliumCLI {
   private processPrompt(prompt: string): void {
     if (!prompt) return;
 
-    this.geminiClient.generateResponse(prompt)
-      .then(response => {
-        console.log(chalk.blueBright(`Berkelium: ${response}\n`));
+    this.geminiClient
+      .generateResponse(prompt)
+      .then((response) => {
+        console.log(chalk.blueBright("Berkelium: "), response, "\n ");
       })
-      .catch(error => {
-        console.error(chalk.red("❌ Error generating response:"), error);
+      .catch((error) => {
+        console.error(chalk.red("❌ Error generating response:"), error, "\n ");
       });
   }
 }
