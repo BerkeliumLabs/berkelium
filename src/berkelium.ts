@@ -14,6 +14,15 @@ class BerkeliumCLI {
   constructor() {
     this.configManager = ConfigManager.getInstance();
     this.geminiClient = new GeminiClient();
+
+    // Handle graceful shutdown
+    process.on("SIGINT", () => {
+      this.exit();
+    });
+
+    process.on("SIGTERM", () => {
+      this.exit();
+    });
   }
 
   async start(): Promise<void> {
@@ -45,11 +54,20 @@ class BerkeliumCLI {
       console.dir(err);
     }
 
-    console.log(
+    const infoBox = boxen(
       chalk.blueBright(
-        'Type your questions or commands. Use "help" for available commands, "exit" or "quit" to leave.\n'
-      )
+        'Type your questions or commands. Use "help" for available commands, "exit" or "quit" to leave.'
+      ),
+      {
+        width: process.stdout.columns || 80,
+        padding: { left: 2, right: 2 },
+        borderStyle: "round",
+        borderColor: "cyan",
+        float: "center",
+      }
     );
+
+    console.log(infoBox);
   }
 
   /**
@@ -76,7 +94,7 @@ class BerkeliumCLI {
               return "API key cannot be empty";
             }
             if (!value.startsWith("AIza")) {
-              return 'Invalid API key format. Gemini API keys typically start with "AIza"';
+              return "Invalid API key format.";
             }
             return true;
           },
@@ -95,25 +113,12 @@ class BerkeliumCLI {
     while (this.isRunning) {
       try {
         const userInput = await input({
-          message: "",
+          message: "> ",
           theme: {
             prefix: "",
-            style: {
-              message: (text: string, status: 'idle' | 'done' | 'loading') => {
-                if (status === 'loading') {
-                  return boxen(`> ${text}`, {
-                    width: process.stdout.columns || 80,
-                    padding: { left: 2, right: 2 },
-                    borderStyle: 'round',
-                    borderColor: 'cyan',
-                    float: 'center',
-                  });
-                }
-                return `${status}> ${text}`;
-              }
-            },
           },
         });
+
         await this.processCommand(userInput.trim());
       } catch (error: Error | any) {
         if (error.name === "ExitPromptError") {
@@ -151,7 +156,18 @@ class BerkeliumCLI {
   }
 
   private exit(): void {
-    console.log(chalk.green("\n👋 Goodbye! Thanks for using Berkelium."));
+    const idlebox = boxen(
+      chalk.hex("#FF6F00").bold("👋 Goodbye! Thanks for using Berkelium."),
+      {
+        width: process.stdout.columns || 80,
+        padding: { left: 2, right: 2 },
+        borderStyle: "round",
+        borderColor: "yellow",
+        float: "center",
+      }
+    );
+    console.log("\n");
+    console.log(idlebox);
     this.isRunning = false;
     process.exit(0);
   }
@@ -162,24 +178,13 @@ class BerkeliumCLI {
     this.geminiClient
       .generateResponse(prompt)
       .then((response) => {
-        console.log(chalk.blueBright("Berkelium: "), response, "\n ");
+        console.log(chalk.blueBright(`${response}`));
       })
       .catch((error) => {
         console.error(chalk.red("❌ Error generating response:"), error, "\n ");
       });
   }
 }
-
-// Handle graceful shutdown
-process.on("SIGINT", () => {
-  console.log(chalk.green("\n\n👋 Goodbye! Thanks for using Berkelium."));
-  process.exit(0);
-});
-
-process.on("SIGTERM", () => {
-  console.log(chalk.green("\n\n👋 Goodbye! Thanks for using Berkelium."));
-  process.exit(0);
-});
 
 // Start the application
 const cli = new BerkeliumCLI();

@@ -31,7 +31,7 @@ export class GeminiClient {
         systemInstruction: 'You are Berkelium, an intelligent AI coding assistant. You help developers with code-related tasks, explanations, debugging, and general programming questions. You have access to tools for reading files, writing files, and running shell commands. Use these tools when appropriate to help users with their requests. Be helpful, concise, and accurate in your responses.',
         /* tools: [{ functionDeclarations: [] }] */
       });
-      console.log('✅ Berkelium initialized successfully');
+      // console.log('✅ Berkelium initialized successfully\n');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('❌ Failed to initialize Berkelium:', errorMessage);
