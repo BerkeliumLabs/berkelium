@@ -3,13 +3,16 @@
 import { input } from "@inquirer/prompts";
 import chalk from "chalk";
 import { ConfigManager } from './utils/config.js';
+import { GeminiClient } from "./gemini-client.js";
 
 class BerkeliumCLI {
   private isRunning = true;
   private configManager: ConfigManager;
+  private geminiClient: GeminiClient;
 
   constructor() {
     this.configManager = ConfigManager.getInstance();
+    this.geminiClient = new GeminiClient();
   }
 
   async start(): Promise<void> {
@@ -107,7 +110,7 @@ class BerkeliumCLI {
         this.showHelp();
         break;
       default:
-        console.log(chalk.yellow(`Command not recognized: ${command}`));
+        this.processPrompt(command);
         break;
     }
   }
@@ -123,6 +126,18 @@ class BerkeliumCLI {
     console.log(chalk.green("\n👋 Goodbye! Thanks for using Berkelium."));
     this.isRunning = false;
     process.exit(0);
+  }
+
+  private processPrompt(prompt: string): void {
+    if (!prompt) return;
+
+    this.geminiClient.generateResponse(prompt)
+      .then(response => {
+        console.log(chalk.blueBright(`Berkelium: ${response}\n`));
+      })
+      .catch(error => {
+        console.error(chalk.red("❌ Error generating response:"), error);
+      });
   }
 }
 

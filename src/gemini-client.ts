@@ -1,5 +1,4 @@
 import { GoogleGenerativeAI, GenerativeModel, GenerateContentResult, Content } from '@google/generative-ai';
-import { toolDeclarations } from './tools/declarations';
 import { ConfigManager } from './utils/config.js';
 
 /**
@@ -30,7 +29,7 @@ export class GeminiClient {
           maxOutputTokens: 2048,
         },
         systemInstruction: 'You are Berkelium, an intelligent AI coding assistant. You help developers with code-related tasks, explanations, debugging, and general programming questions. You have access to tools for reading files, writing files, and running shell commands. Use these tools when appropriate to help users with their requests. Be helpful, concise, and accurate in your responses.',
-        tools: [{ functionDeclarations: toolDeclarations }]
+        /* tools: [{ functionDeclarations: [] }] */
       });
       console.log('✅ Berkelium initialized successfully');
     } catch (error) {
