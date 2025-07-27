@@ -1,10 +1,15 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatGoogleGenerativeAI, GoogleGenerativeAIChatCallOptions } from "@langchain/google-genai";
 import { ConfigManager } from "../utils/config.js";
+import { tools } from "../tools/index.js";
+import { SystemMessage, HumanMessage, AIMessageChunk } from "@langchain/core/messages";
+import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
+import { Runnable } from "@langchain/core/runnables";
+import { executeTool } from "../tools/index-old.js";
 
 export class BerkeliumContextManager {
   private configManager: ConfigManager;
 
-  public contextManager!: ChatGoogleGenerativeAI;
+  public contextManager!: Runnable<BaseLanguageModelInput, AIMessageChunk, GoogleGenerativeAIChatCallOptions>;
 
   constructor() {
     this.configManager = ConfigManager.getInstance();
@@ -19,11 +24,13 @@ export class BerkeliumContextManager {
       }
 
       // Initialize the context manager with the API key
-      this.contextManager = new ChatGoogleGenerativeAI({
-        model: "gemini-2.0-flash-exp",
+      const llm = new ChatGoogleGenerativeAI({
+        model: "gemini-2.5-flash-lite",
         maxOutputTokens: 2048,
         apiKey: apiKey,
       });
+
+      this.contextManager = llm.bindTools(tools);
 
       console.log("✅ Context Manager initialized successfully");
     } catch (error) {
@@ -35,9 +42,22 @@ export class BerkeliumContextManager {
   }
 
   generateResponse(prompt: string): Promise<string> {
+    const systemMessage = new SystemMessage(
+      "You are Berkelium, a powerful AI assistant designed to help users with various tasks."
+    );
+
+    const userMessage = new HumanMessage(prompt);
+
     return this.contextManager
-      .invoke(prompt)
-      .then((result) => result.text)
+      .invoke([systemMessage, userMessage])
+      .then((result) => {
+        console.log("✅ Response generated successfully", result);
+        if (result.tool_calls && result.tool_calls.length > 0) {
+          console.log("🔧 Tool calls detected:", result.tool_calls);
+          executeTool(result.tool_calls[0].name, result.tool_calls[0].args);
+        }
+        return result.text;
+      })
       .catch((error) => {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";

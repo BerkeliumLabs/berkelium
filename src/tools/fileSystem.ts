@@ -2,8 +2,8 @@ import { readFile as fsReadFile, writeFile as fsWriteFile, access, mkdir, readdi
 import { constants } from 'fs';
 import { resolve, dirname, join } from 'path';
 import confirm from '@inquirer/confirm';
-import { ToolResult } from './declarations';
-import { ErrorHandler, ErrorCategory } from '../utils/error-handler';
+import { ToolResult } from './declarations.js';
+import { ErrorHandler, ErrorCategory } from '../utils/error-handler.js';
 
 /**
  * Read the contents of a file from the local file system
@@ -45,6 +45,7 @@ export async function writeFile(
   content: string, 
   createDirectories: boolean = true
 ): Promise<ToolResult> {
+  console.log(`Writing to file: ${filePath}`);
   try {
     // Resolve the path to handle relative paths
     const resolvedPath = resolve(filePath);

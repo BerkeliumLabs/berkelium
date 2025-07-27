@@ -1,78 +1,22 @@
-// Tool declarations
-export * from './declarations';
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
+import { writeFile } from "./fileSystem.js";
 
-// File system tools
-export * from './fileSystem';
+// Schema for writing files
+const writeFileSchema = z.object({
+  filePath: z.string().describe("The path to the file to write"),
+  content: z.string().describe("The content to write to the file"),
+  createDirectories: z.boolean().optional().default(true).describe("Whether to create parent directories if they don't exist")
+});
 
-// Shell tools
-export * from './shell';
-
-// Web search tools
-export * from './webSearch';
-
-// Tool registry for easy access
-import { readFile, writeFile, listDirectory, createDirectory, deleteFile } from './fileSystem';
-import { runCommand } from './shell';
-import { webSearch } from './webSearch';
-import { ToolName, ToolResult } from './declarations';
-
-/**
- * Registry of available tools
- */
-export const availableTools = {
-  readFile,
+// @ts-ignore
+const writeFileTool = tool(
   writeFile,
-  listDirectory,
-  createDirectory,
-  deleteFile,
-  runCommand,
-  webSearch
-};
-
-/**
- * Execute a tool by name with given arguments
- */
-export async function executeTool(
-  toolName: ToolName,
-  args: Record<string, any>
-): Promise<ToolResult> {
-  switch (toolName) {
-    case 'readFile':
-      return readFile(args.filePath);
-    
-    case 'writeFile':
-      return writeFile(
-        args.filePath, 
-        args.content, 
-        args.createDirectories ?? true
-      );
-    
-    case 'listDirectory':
-      return listDirectory(
-        args.directoryPath,
-        args.showHidden ?? false
-      );
-    
-    case 'createDirectory':
-      return createDirectory(
-        args.directoryPath,
-        args.recursive ?? true
-      );
-    
-    case 'deleteFile':
-      return deleteFile(args.filePath);
-    
-    case 'runCommand':
-      return runCommand(args.command, args.workingDirectory);
-    
-    case 'webSearch':
-      return webSearch(args.query, args.maxResults);
-    
-    default:
-      return {
-        success: false,
-        output: '',
-        error: `Unknown tool: ${toolName}`
-      };
+  {
+    name: "writeFile",
+    description: "Write content to a file on the local file system. Use this when the user asks to create a new file, modify an existing file, or save content to a specific location.",
+    schema: writeFileSchema
   }
-}
+);
+
+export const tools = [writeFileTool];
