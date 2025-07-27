@@ -3,17 +3,17 @@
 import { input } from "@inquirer/prompts";
 import chalk from "chalk";
 import { ConfigManager } from "./utils/config.js";
-import { GeminiClient } from "./gemini-client.js";
 import boxen from "boxen";
+import { BerkeliumContextManager } from "./core/context-manager.js";
 
 class BerkeliumCLI {
   private isRunning = true;
   private configManager: ConfigManager;
-  private geminiClient: GeminiClient;
+  private contextManager: BerkeliumContextManager;
 
   constructor() {
     this.configManager = ConfigManager.getInstance();
-    this.geminiClient = new GeminiClient();
+    this.contextManager = new BerkeliumContextManager();
 
     // Handle graceful shutdown
     process.on("SIGINT", () => {
@@ -115,7 +115,7 @@ class BerkeliumCLI {
         const userInput = await input({
           message: "> ",
           theme: {
-            prefix: "",
+            prefix: ""
           },
         });
 
@@ -175,7 +175,7 @@ class BerkeliumCLI {
   private processPrompt(prompt: string): void {
     if (!prompt) return;
 
-    this.geminiClient
+    this.contextManager
       .generateResponse(prompt)
       .then((response) => {
         console.log(chalk.blueBright(`${response}`));

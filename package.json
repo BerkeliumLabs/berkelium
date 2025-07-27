@@ -26,10 +26,14 @@
     "@google/generative-ai": "^0.21.0",
     "@inquirer/confirm": "^4.0.1",
     "@inquirer/prompts": "^7.0.1",
+    "@langchain/core": "^0.3.66",
+    "@langchain/google-genai": "^0.2.16",
     "boxen": "^8.0.1",
     "chalk": "^5.4.1",
     "figlet": "^1.8.2",
-    "gradient-string": "^3.0.0"
+    "gradient-string": "^3.0.0",
+    "ora": "^8.2.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/chalk-animation": "^1.6.3",
