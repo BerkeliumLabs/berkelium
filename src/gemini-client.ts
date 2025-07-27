@@ -1,6 +1,15 @@
 import { GoogleGenerativeAI, GenerativeModel, GenerateContentResult, Content } from '@google/generative-ai';
 import { toolDeclarations } from './tools/declarations';
-import { logger } from './utils/logger';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
+
+interface Config {
+  version: string;
+  createdAt: string;
+  updatedAt: string;
+  geminiApiKey: string;
+}
 
 /**
  * Manages the Gemini AI client and model interactions
@@ -8,9 +17,42 @@ import { logger } from './utils/logger';
 export class GeminiClient {
   private genAI!: GoogleGenerativeAI;
   private model!: GenerativeModel;
+  private configPath: string;
 
   constructor() {
+    this.configPath = path.join(os.homedir(), 'config.json');
     this.initializeClient();
+  }
+
+  /**
+   * Load configuration from config.json in user's home directory
+   */
+  private loadConfig(): Config {
+    try {
+      if (!fs.existsSync(this.configPath)) {
+        throw new Error(
+          `Configuration file not found at ${this.configPath}. ` +
+          'Please create a config.json file in your home directory with your Gemini API key.'
+        );
+      }
+
+      const configData = fs.readFileSync(this.configPath, 'utf8');
+      const config: Config = JSON.parse(configData);
+
+      if (!config.geminiApiKey) {
+        throw new Error(
+          'geminiApiKey is missing from config.json. ' +
+          'Please add your Google Gemini API key to the configuration file.'
+        );
+      }
+
+      return config;
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        throw new Error(`Invalid JSON in config file at ${this.configPath}. Please check the file format.`);
+      }
+      throw error;
+    }
   }
 
   /**
@@ -18,14 +60,8 @@ export class GeminiClient {
    */
   private initializeClient(): void {
     try {
-      const apiKey = process.env.GEMINI_API_KEY;
-      
-      if (!apiKey) {
-        throw new Error(
-          'GEMINI_API_KEY environment variable is required. ' +
-          'Please set it with your Google Gemini API key.'
-        );
-      }
+      const config = this.loadConfig();
+      const apiKey = config.geminiApiKey;
 
       this.genAI = new GoogleGenerativeAI(apiKey);
       this.model = this.genAI.getGenerativeModel({ 
@@ -37,17 +73,9 @@ export class GeminiClient {
         systemInstruction: 'You are Berkelium, an intelligent AI coding assistant. You help developers with code-related tasks, explanations, debugging, and general programming questions. You have access to tools for reading files, writing files, and running shell commands. Use these tools when appropriate to help users with their requests. Be helpful, concise, and accurate in your responses.',
         tools: [{ functionDeclarations: toolDeclarations }]
       });
-
-      logger.info('AI_CLIENT', 'Gemini AI client initialized successfully', { 
-        model: 'gemini-2.0-flash-exp' 
-      });
-      // Don't log to console - only show success without details
       console.log('✅ Berkelium initialized successfully');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('AI_CLIENT', 'Failed to initialize Gemini AI client', { 
-        error: errorMessage 
-      });
       console.error('❌ Failed to initialize Berkelium:', errorMessage);
       process.exit(1);
     }
@@ -64,7 +92,7 @@ export class GeminiClient {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       if (errorMessage.includes('API_KEY_INVALID')) {
-        throw new Error('Invalid Gemini API key. Please check your GEMINI_API_KEY environment variable.');
+        throw new Error('Invalid Gemini API key. Please check your config.json file.');
       }
       if (errorMessage.includes('RATE_LIMIT_EXCEEDED')) {
         throw new Error('Rate limit exceeded. Please try again in a moment.');
@@ -77,29 +105,14 @@ export class GeminiClient {
    * Send content with conversation history to Gemini (supports function calling)
    */
   async generateContentWithHistory(contents: Content[]): Promise<GenerateContentResult> {
-    try {
-      logger.debug('AI_API', 'Sending request to Gemini', { 
-        contentCount: contents.length,
-        lastUserMessage: contents[contents.length - 1]?.parts?.[0]?.text?.substring(0, 100) + '...'
-      });
-      
-      const result = await this.model.generateContent({ contents });
-      
-      logger.debug('AI_API', 'Received response from Gemini', { 
-        hasResponse: !!result.response
-      });
-      
+    try {     
+      const result = await this.model.generateContent({ contents });     
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
-      logger.error('AI_API', 'Gemini API request failed', { 
-        error: errorMessage,
-        contentCount: contents.length
-      });
-      
       if (errorMessage.includes('API_KEY_INVALID')) {
-        throw new Error('Invalid Gemini API key. Please check your GEMINI_API_KEY environment variable.');
+        throw new Error('Invalid Gemini API key. Please check your config.json file.');
       }
       if (errorMessage.includes('RATE_LIMIT_EXCEEDED')) {
         throw new Error('Rate limit exceeded. Please try again in a moment.');
