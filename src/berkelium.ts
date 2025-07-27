@@ -85,7 +85,20 @@ class BerkeliumCLI {
   private async runREPL(): Promise<void> {
     while (this.isRunning) {
       try {
-        const userInput = await input({ message: "> " });
+        // Ensure clean line before prompt
+        process.stdout.write('\n');
+        const userInput = await input({ 
+          message: chalk.green("> "),
+          theme: {
+            prefix: {
+              idle: chalk.green("?"),
+              done: chalk.green("✓")
+            },
+            style: {
+              message: (text: string) => text
+            }
+          }
+        });
         await this.processCommand(userInput.trim());
       } catch (error: Error | any) {
         if (error.name === "ExitPromptError") {
