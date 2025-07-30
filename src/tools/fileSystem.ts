@@ -2,7 +2,6 @@ import { readFile as fsReadFile, writeFile as fsWriteFile, access, mkdir, readdi
 import { constants } from 'fs';
 import { resolve, dirname, join } from 'path';
 import confirm from '@inquirer/confirm';
-import { ToolResult } from './declarations.js';
 import { ErrorHandler, ErrorCategory } from '../utils/error-handler.js';
 
 /**

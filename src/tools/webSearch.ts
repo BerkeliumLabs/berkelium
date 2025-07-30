@@ -1,4 +1,3 @@
-import { ToolResult } from './declarations';
 import { logger } from '../utils/logger';
 
 /**

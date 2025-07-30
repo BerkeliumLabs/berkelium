@@ -2,7 +2,6 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { resolve } from 'path';
 import confirm from '@inquirer/confirm';
-import { ToolResult } from './declarations.js';
 import { ErrorHandler, ErrorCategory } from '../utils/error-handler.js';
 
 const execAsync = promisify(exec);
