@@ -28,6 +28,8 @@
     "@inquirer/prompts": "^7.0.1",
     "@langchain/core": "^0.3.66",
     "@langchain/google-genai": "^0.2.16",
+    "@langchain/langgraph": "^0.4.0",
+    "@langchain/mcp-adapters": "^0.6.0",
     "boxen": "^8.0.1",
     "chalk": "^5.4.1",
     "figlet": "^1.8.2",

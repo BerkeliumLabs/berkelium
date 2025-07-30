@@ -8,7 +8,8 @@ import { ErrorHandler, ErrorCategory } from '../utils/error-handler.js';
 /**
  * Read the contents of a file from the local file system
  */
-export async function readFile(filePath: string): Promise<ToolResult> {
+export async function readFile(args: { filePath: string }): Promise<ToolResult> {
+  const { filePath } = args;
   try {
     // Resolve the path to handle relative paths
     const resolvedPath = resolve(filePath);
@@ -40,11 +41,8 @@ export async function readFile(filePath: string): Promise<ToolResult> {
 /**
  * Write content to a file on the local file system
  */
-export async function writeFile(
-  filePath: string, 
-  content: string, 
-  createDirectories: boolean = true
-): Promise<ToolResult> {
+export async function writeFile(args: { filePath: string; content: string; createDirectories?: boolean }): Promise<ToolResult> {
+  const { filePath, content, createDirectories } = args;
   console.log(`Writing to file: ${filePath}`);
   try {
     // Resolve the path to handle relative paths
@@ -101,10 +99,11 @@ export async function writeFile(
 /**
  * List the contents of a directory
  */
-export async function listDirectory(
-  directoryPath: string,
-  showHidden: boolean = false
-): Promise<ToolResult> {
+export async function listDirectory(args: {
+  directoryPath: string;
+  showHidden?: boolean;
+}): Promise<ToolResult> {
+  const { directoryPath, showHidden = false } = args;
   try {
     // Resolve the path to handle relative paths
     const resolvedPath = resolve(directoryPath);
@@ -191,10 +190,11 @@ export async function listDirectory(
 /**
  * Create a new directory
  */
-export async function createDirectory(
-  directoryPath: string,
-  recursive: boolean = true
-): Promise<ToolResult> {
+export async function createDirectory(args: {
+  directoryPath: string;
+  recursive?: boolean;
+}): Promise<ToolResult> {
+  const { directoryPath, recursive = true } = args;
   try {
     // Resolve the path to handle relative paths
     const resolvedPath = resolve(directoryPath);
@@ -257,7 +257,8 @@ async function getDeleteConfirmation(filePath: string): Promise<boolean> {
 /**
  * Delete a file from the file system
  */
-export async function deleteFile(filePath: string): Promise<ToolResult> {
+export async function deleteFile(args: { filePath: string }): Promise<ToolResult> {
+  const { filePath } = args;
   try {
     // Resolve the path to handle relative paths
     const resolvedPath = resolve(filePath);

@@ -1,15 +1,14 @@
-import { ChatGoogleGenerativeAI, GoogleGenerativeAIChatCallOptions } from "@langchain/google-genai";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ConfigManager } from "../utils/config.js";
 import { tools } from "../tools/index.js";
-import { SystemMessage, HumanMessage, AIMessageChunk } from "@langchain/core/messages";
-import { BaseLanguageModelInput } from "@langchain/core/language_models/base";
-import { Runnable } from "@langchain/core/runnables";
-import { executeTool } from "../tools/index-old.js";
+import { SystemMessage, HumanMessage } from "@langchain/core/messages";
+import { executeTool } from "../tools/executor.js";
 
 export class BerkeliumContextManager {
   private configManager: ConfigManager;
 
-  public contextManager!: Runnable<BaseLanguageModelInput, AIMessageChunk, GoogleGenerativeAIChatCallOptions>;
+  public contextManager!: ReturnType<typeof createReactAgent>;
 
   constructor() {
     this.configManager = ConfigManager.getInstance();
@@ -30,7 +29,10 @@ export class BerkeliumContextManager {
         apiKey: apiKey,
       });
 
-      this.contextManager = llm.bindTools(tools);
+      this.contextManager = createReactAgent({
+        llm,
+        tools,
+      });
 
       console.log("✅ Context Manager initialized successfully");
     } catch (error) {
@@ -49,14 +51,16 @@ export class BerkeliumContextManager {
     const userMessage = new HumanMessage(prompt);
 
     return this.contextManager
-      .invoke([systemMessage, userMessage])
+      .invoke({
+        messages: [systemMessage, userMessage]
+      })
       .then((result) => {
         console.log("✅ Response generated successfully", result);
         if (result.tool_calls && result.tool_calls.length > 0) {
           console.log("🔧 Tool calls detected:", result.tool_calls);
           executeTool(result.tool_calls[0].name, result.tool_calls[0].args);
         }
-        return result.text;
+        return result.content || "";
       })
       .catch((error) => {
         const errorMessage =

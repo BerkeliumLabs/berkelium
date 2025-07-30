@@ -2,8 +2,8 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { resolve } from 'path';
 import confirm from '@inquirer/confirm';
-import { ToolResult } from './declarations';
-import { ErrorHandler, ErrorCategory } from '../utils/error-handler';
+import { ToolResult } from './declarations.js';
+import { ErrorHandler, ErrorCategory } from '../utils/error-handler.js';
 
 const execAsync = promisify(exec);
 
@@ -56,10 +56,11 @@ async function getDestructiveCommandConfirmation(command: string): Promise<boole
 /**
  * Execute a shell command on the local system
  */
-export async function runCommand(
-  command: string,
-  workingDirectory?: string
-): Promise<ToolResult> {
+export async function runCommand(args: {
+  command: string;
+  workingDirectory?: string;
+}): Promise<ToolResult> {
+  const { command, workingDirectory } = args;
   try {
     // Check if command is potentially destructive and get user confirmation
     if (isDestructiveCommand(command)) {

@@ -1,16 +1,9 @@
 import { tool } from "@langchain/core/tools";
-import { z } from "zod";
 import { writeFile } from "./fileSystem.js";
-
-// Schema for writing files
-const writeFileSchema = z.object({
-  filePath: z.string().describe("The path to the file to write"),
-  content: z.string().describe("The content to write to the file"),
-  createDirectories: z.boolean().optional().default(true).describe("Whether to create parent directories if they don't exist")
-});
+import { writeFileSchema } from "./schema.js";
 
 // @ts-ignore
-const writeFileTool = tool(
+export const writeFileTool = tool(
   writeFile,
   {
     name: "writeFile",
