@@ -2,7 +2,7 @@ import { readFile as fsReadFile, writeFile as fsWriteFile, access, mkdir, readdi
 import { constants } from 'fs';
 import { resolve, dirname, join } from 'path';
 import confirm from '@inquirer/confirm';
-import { ErrorHandler, ErrorCategory } from '../utils/error-handler.js';
+import type { ToolResult } from '../../types/ToolResult';
 
 /**
  * Read the contents of a file from the local file system
@@ -24,15 +24,14 @@ export async function readFile(args: { filePath: string }): Promise<ToolResult> 
       output: content
     };
   } catch (error) {
-    const berkeliumError = ErrorHandler.handle(error, ErrorCategory.FILE_SYSTEM_ERROR, { 
-      operation: 'readFile', 
-      filePath 
-    });
+    console.error(`Error reading file ${filePath}:`, error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     return {
       success: false,
       output: '',
-      error: berkeliumError.message
+      error: `Failed to read file ${filePath}: ${errorMessage}`
     };
   }
 }
