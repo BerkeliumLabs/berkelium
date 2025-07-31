@@ -4,16 +4,16 @@ import { input } from "@inquirer/prompts";
 import chalk from "chalk";
 import { ConfigManager } from "./utils/config.js";
 import boxen from "boxen";
-import { BerkeliumContextManager } from "./core/context-manager.js";
+import { BerkeliumAgent } from "./core";
 
 class BerkeliumCLI {
   private isRunning = true;
   private configManager: ConfigManager;
-  private contextManager: BerkeliumContextManager;
+  private berkeliumAgent: BerkeliumAgent;
 
   constructor() {
     this.configManager = ConfigManager.getInstance();
-    this.contextManager = new BerkeliumContextManager();
+    this.berkeliumAgent = new BerkeliumAgent();
 
     // Handle graceful shutdown
     process.on("SIGINT", () => {
@@ -175,7 +175,7 @@ class BerkeliumCLI {
   private processPrompt(prompt: string): void {
     if (!prompt) return;
 
-    this.contextManager
+    this.berkeliumAgent
       .generateResponse(prompt)
       .then((response) => {
         console.log(chalk.blueBright(`${response}`));
