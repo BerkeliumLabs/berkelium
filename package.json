@@ -19,6 +19,10 @@
 		"dist"
 	],
 	"dependencies": {
+		"@langchain/core": "^0.3.66",
+		"@langchain/google-genai": "^0.2.16",
+		"@langchain/langgraph": "^0.4.0",
+		"@langchain/mcp-adapters": "^0.6.0",
 		"figlet": "^1.8.2",
 		"gradient-string": "^3.0.0",
 		"meow": "^11.0.0",
