@@ -1,29 +1,26 @@
 #!/usr/bin/env node
 import React from 'react';
 import {render} from 'ink';
-import meow from 'meow';
-import App from './app.js';
+import { BerkeliumCLI } from './berkelium.js';
 
-const cli = meow(
-	`
-	Usage
-	  $ berkelium
+// Welcome message
+const [{default: figlet}, {default: gradient}] = await Promise.all([
+	import('figlet'),
+	import('gradient-string'),
+]);
 
-	Options
-		--name  Your name
-
-	Examples
-	  $ berkelium --name=Jane
-	  Hello, Jane
-`,
-	{
-		importMeta: import.meta,
-		flags: {
-			name: {
-				type: 'string',
-			},
-		},
-	},
+const coolGradient = gradient(['#FFA800', '#FF6F00']);
+const welcomeArt = coolGradient(
+	figlet.textSync('Berkelium.dev', {
+		font: 'ANSI Shadow',
+		horizontalLayout: 'default',
+		verticalLayout: 'default',
+		whitespaceBreak: true,
+	}),
 );
 
-render(<App name={cli.flags.name} />);
+console.log(welcomeArt);
+
+render(
+	<BerkeliumCLI />,
+);
