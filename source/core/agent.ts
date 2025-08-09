@@ -6,6 +6,7 @@ import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 import { executeTool } from "../tools/executor.js";
 import { ToolMessage } from "@langchain/core/messages";
 import { ToolCall } from "@langchain/core/messages/tool";
+import useProgressStore from "../store/progress.js";
 
 export class BerkeliumAgent {
   private configManager: ConfigManager;
@@ -60,7 +61,7 @@ export class BerkeliumAgent {
         // console.log("✅ Response generated successfully", result);
 
         if (result['tool_calls'] && result['tool_calls'].length > 0) {
-          console.log("🔧 Tool calls detected:", result['tool_calls']);
+          // console.log("🔧 Tool calls detected:", result['tool_calls']);
 
           // Run all tool calls in parallel
           const toolResults = await Promise.all(
@@ -69,6 +70,8 @@ export class BerkeliumAgent {
                 toolCall.name,
                 toolCall.args
               );
+              console.log("🔧 Tool result:", toolResult);
+              useProgressStore.getState().setProgress( toolResult || "Tool executed successfully");
               return {
                 name: toolCall.name,
                 result: toolResult,
