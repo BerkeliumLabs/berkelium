@@ -7,6 +7,7 @@ import chalk from 'chalk';
 import {handleHelpCommands} from './utils/help-commands.js';
 import {BerkeliumRouter} from './core/router.js';
 import Spinner from 'ink-spinner';
+import useProgressStore from './store/progress.js';
 const berkeliumPromptRouter = new BerkeliumRouter();
 
 export const BerkeliumCLI = () => {
@@ -20,6 +21,7 @@ export const BerkeliumCLI = () => {
 	const [inputKey, setInputKey] = useState(0);
 	const [isRunning, setIsRunning] = useState(true);
 	const [isLoading, setIsLoading] = useState(false);
+  const { progress } = useProgressStore();
 
 	// Predefined list for @
 	const roleItems = [
@@ -140,7 +142,7 @@ export const BerkeliumCLI = () => {
 					<Text color="green">
 						<Spinner type="dots" />
 					</Text>
-					{' Thinking...'}
+					{ ` ${progress}` }
 				</Text>
 			)}
 

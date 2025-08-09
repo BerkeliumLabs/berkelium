@@ -9,6 +9,7 @@ import {
 } from 'fs/promises';
 import {constants} from 'fs';
 import {resolve, dirname, join} from 'path';
+import useProgressStore from '../store/progress.js';
 
 /**
  * Read the contents of a file from the local file system
@@ -52,7 +53,7 @@ export async function writeFile(args: {
 	createDirectories?: boolean;
 }): Promise<ToolResult> {
 	const {filePath, content, createDirectories} = args;
-	console.log(`💬 Writing to file: ${filePath}`);
+	useProgressStore.getState().setProgress( `Writing to file: ${filePath}`);
 	try {
 		// Resolve the path to handle relative paths
 		const resolvedPath = resolve(filePath);
