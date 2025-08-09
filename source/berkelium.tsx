@@ -10,6 +10,8 @@ export const BerkeliumCLI = () => {
 	const [filteredItems, setFilteredItems] = useState<
 		{label: string; value: string}[]
 	>([]);
+	const [isSelecting, setIsSelecting] = useState(false);
+  const [inputKey, setInputKey] = useState(0);
 
 	// Predefined list for @
 	const roleItems = [
@@ -22,9 +24,30 @@ export const BerkeliumCLI = () => {
 
 	useEffect(() => {
 		// Handle mode changes and filtering
-		if (inputValue.startsWith('#')) {
+		if (inputValue.endsWith('#')) {
+			const searchInput = inputValue.split('#').at(-1) ?? '';
+			setIsSelecting(true);
 			setMode('files');
-			const search = inputValue.substring(1).toLowerCase();
+			handleFilter(searchInput);
+		} else if (inputValue.endsWith('@')) {
+			setIsSelecting(true);
+			setMode('roles');
+			const searchInput = inputValue.split('@').at(-1) ?? '';
+			handleFilter(searchInput);
+		} else if (mode === 'files') {
+			const searchInput = inputValue.split('#').at(-1) ?? '';
+			handleFilter(searchInput);
+		} else if (mode === 'roles') {
+			const searchInput = inputValue.split('@').at(-1) ?? '';
+			handleFilter(searchInput);
+		} else {
+			setMode('input');
+		}
+	}, [inputValue, mode, isSelecting]);
+
+	const handleFilter = (searchInput: string) => {
+		if (mode === 'files') {
+			const search = searchInput.toLowerCase();
 			const files = readdirSync('.').map(file => ({
 				label: file,
 				value: file,
@@ -32,21 +55,39 @@ export const BerkeliumCLI = () => {
 			setFilteredItems(
 				files.filter(item => item.label.toLowerCase().includes(search)),
 			);
-		} else if (inputValue.startsWith('@')) {
-			setMode('roles');
-			const search = inputValue.substring(1).toLowerCase();
+		} else if (mode === 'roles') {
+			const search = searchInput.toLowerCase();
 			setFilteredItems(
 				roleItems.filter(item => item.label.toLowerCase().includes(search)),
 			);
-		} else {
-			setMode('input');
 		}
-	}, [inputValue]);
+	};
 
-  const handleInputChange = (value: string) => {
-    console.log(`🔵 ${value}`);
-    setInputValue(''); // Clear input after submission
-  };
+	const handleInputChange = (value: string) => {
+		if (isSelecting) {
+			setIsSelecting(false);
+			return;
+		}
+		console.log(`🔵 ${value}`);
+		setInputValue(''); // Clear input after submission
+	};
+
+	const handleSelectChange = (item: IHandleSelectChangeItem): void => {
+		let prefix = '';
+		let fullInput = '';
+		if (mode === 'files') {
+			fullInput = inputValue.split('#').slice(0, -1).join('#') ?? '';
+			prefix = '#';
+		} else if (mode === 'roles') {
+			fullInput = inputValue.split('@').slice(0, -1).join('@') ?? '';
+			prefix = '@';
+		}
+		// Set the input value to the prefix plus the selected item's value
+		setMode('input');
+    setIsSelecting(false);
+		setInputValue(fullInput + prefix + item?.value);
+    setInputKey(prevKey => prevKey + 1);
+	};
 
 	return (
 		<Box flexDirection="column">
@@ -56,6 +97,8 @@ export const BerkeliumCLI = () => {
 					value={inputValue}
 					onChange={setInputValue}
 					showCursor={mode === 'input'}
+					key={inputKey}
+					placeholder='Enter your prompt'
 					onSubmit={() => {
 						handleInputChange(inputValue);
 					}}
@@ -64,14 +107,7 @@ export const BerkeliumCLI = () => {
 
 			{mode !== 'input' && (
 				<Box marginTop={1}>
-					<SelectInput
-						items={filteredItems}
-						onSelect={item => {
-							// Handle selection
-							setInputValue(inputValue + item.value);
-							setMode('input');
-						}}
-					/>
+					<SelectInput items={filteredItems} onSelect={handleSelectChange} />
 				</Box>
 			)}
 		</Box>
