@@ -21,7 +21,7 @@ export const BerkeliumCLI = () => {
 	const [inputKey, setInputKey] = useState(0);
 	const [isRunning, setIsRunning] = useState(true);
 	const [isLoading, setIsLoading] = useState(false);
-  const { progress } = useProgressStore();
+  const { progress, resetProgress, setProgress } = useProgressStore();
 
 	// Predefined list for @
 	const roleItems = [
@@ -98,6 +98,7 @@ export const BerkeliumCLI = () => {
       } else {
         const response = await berkeliumPromptRouter.routePrompt(value);
         setIsLoading(false);
+        resetProgress();
         console.log(`🟢 ${response}\n`);
       }
 		} catch (error) {
@@ -125,6 +126,7 @@ export const BerkeliumCLI = () => {
 
 	const handleExit = () => {
 		setIsRunning(false);
+		setProgress('Exiting...');
 		const exitMessage = chalk
 			.hex('#FF6F00')
 			.bold('\n👋 Goodbye! Thanks for using Berkelium.');
@@ -146,7 +148,7 @@ export const BerkeliumCLI = () => {
 				</Text>
 			)}
 
-			{isRunning && (
+			{(isRunning && !isLoading) && (
 				<Box
 					borderStyle="round"
 					borderColor="#FFBF00"

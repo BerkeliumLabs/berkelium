@@ -69,5 +69,18 @@
 			"react/prop-types": "off"
 		}
 	},
-	"prettier": "@vdemedes/prettier-config"
+	"prettier": "@vdemedes/prettier-config",
+	"keywords": [
+		"ai",
+		"cli",
+		"assistant",
+		"gemini",
+		"typescript"
+	],
+	"author": "BerkeliumLabs",
+	"homepage": "https://berkelium.dev",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/BerkeliumLabs/berkelium.git"
+	}
 }

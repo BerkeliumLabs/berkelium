@@ -1,13 +1,19 @@
-import { BerkeliumAgent } from "./agent.js";
+import {BerkeliumAgent} from './agent.js';
+import {BerkeliumContextManager} from './context-manager.js';
 
 export class BerkeliumRouter {
-    private berkeliumAgent = new BerkeliumAgent();
+	private contextManager: BerkeliumContextManager;
+	private berkeliumAgent = new BerkeliumAgent();
 
 	constructor() {
-		// Initialize router
+		this.contextManager = new BerkeliumContextManager();
 	}
 
-    routePrompt(prompt: string): Promise<string> {
-        return this.berkeliumAgent.generateResponse(prompt);
-    }
+	async routePrompt(prompt: string): Promise<string> {
+		this.contextManager.initializeContext();
+		return this.berkeliumAgent.generateResponse(
+			prompt,
+			this.contextManager.context,
+		);
+	}
 }
