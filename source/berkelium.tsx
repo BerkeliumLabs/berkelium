@@ -105,12 +105,14 @@ export const BerkeliumCLI = () => {
 	};
 
 	const handleExit = () => {
-    setIsRunning(false);
+		setIsRunning(false);
 		const exitMessage = chalk
 			.hex('#FF6F00')
 			.bold('\n👋 Goodbye! Thanks for using Berkelium.');
 		console.log(exitMessage);
-		process.exit(0);
+		setTimeout(() => {
+			process.exit(0);
+		}, 1000);
 	};
 
 	return (
