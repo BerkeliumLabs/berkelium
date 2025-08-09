@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import React from 'react';
 import {render} from 'ink';
-import { BerkeliumCLI } from './berkelium.js';
+import chalk from 'chalk';
+import {BerkeliumCLI} from './berkelium.js';
 
 // Welcome message
 const [{default: figlet}, {default: gradient}] = await Promise.all([
@@ -19,8 +20,12 @@ const welcomeArt = coolGradient(
 	}),
 );
 
-console.log(welcomeArt);
-
-render(
-	<BerkeliumCLI />,
+const instructions = chalk.blueBright(
+	`Version ${process.env['npm_package_version']}
+Type your questions or commands. Use "help" for available commands, "exit" or "quit" to leave.`
 );
+
+console.log(welcomeArt);
+console.log(instructions);
+
+render(<BerkeliumCLI />);

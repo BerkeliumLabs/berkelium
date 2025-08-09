@@ -1,8 +1,10 @@
 import React, {useState, useEffect} from 'react';
-import {render, Box, Text} from 'ink';
+import {render, Box, Text, useInput} from 'ink';
 import TextInput from 'ink-text-input';
 import SelectInput from 'ink-select-input';
 import {readdirSync} from 'fs';
+import chalk from 'chalk';
+import {handleHelpCommands} from './utils/help-commands.js';
 
 export const BerkeliumCLI = () => {
 	const [inputValue, setInputValue] = useState('');
@@ -11,7 +13,8 @@ export const BerkeliumCLI = () => {
 		{label: string; value: string}[]
 	>([]);
 	const [isSelecting, setIsSelecting] = useState(false);
-  const [inputKey, setInputKey] = useState(0);
+	const [inputKey, setInputKey] = useState(0);
+	const [isRunning, setIsRunning] = useState(true);
 
 	// Predefined list for @
 	const roleItems = [
@@ -45,6 +48,12 @@ export const BerkeliumCLI = () => {
 		}
 	}, [inputValue, mode, isSelecting]);
 
+	useInput((input, key) => {
+		if (key.ctrl && (input === 'c' || input === 'C')) {
+			handleExit();
+		}
+	});
+
 	const handleFilter = (searchInput: string) => {
 		if (mode === 'files') {
 			const search = searchInput.toLowerCase();
@@ -68,8 +77,14 @@ export const BerkeliumCLI = () => {
 			setIsSelecting(false);
 			return;
 		}
+
 		console.log(`🔵 ${value}`);
 		setInputValue(''); // Clear input after submission
+		if (value === 'exit' || value === 'quit') {
+			handleExit();
+		} else if (value === 'help') {
+			handleHelpCommands();
+		}
 	};
 
 	const handleSelectChange = (item: IHandleSelectChangeItem): void => {
@@ -84,26 +99,42 @@ export const BerkeliumCLI = () => {
 		}
 		// Set the input value to the prefix plus the selected item's value
 		setMode('input');
-    setIsSelecting(false);
+		setIsSelecting(false);
 		setInputValue(fullInput + prefix + item?.value);
-    setInputKey(prevKey => prevKey + 1);
+		setInputKey(prevKey => prevKey + 1);
+	};
+
+	const handleExit = () => {
+    setIsRunning(false);
+		const exitMessage = chalk
+			.hex('#FF6F00')
+			.bold('\n👋 Goodbye! Thanks for using Berkelium.');
+		console.log(exitMessage);
+		process.exit(0);
 	};
 
 	return (
 		<Box flexDirection="column">
-			<Box borderStyle="round" borderColor="#FFBF00" paddingX={1} paddingY={0}>
-				<Text color="#FFBF00">{'>'} </Text>
-				<TextInput
-					value={inputValue}
-					onChange={setInputValue}
-					showCursor={mode === 'input'}
-					key={inputKey}
-					placeholder='Enter your prompt'
-					onSubmit={() => {
-						handleInputChange(inputValue);
-					}}
-				/>
-			</Box>
+			{isRunning && (
+				<Box
+					borderStyle="round"
+					borderColor="#FFBF00"
+					paddingX={1}
+					paddingY={0}
+				>
+					<Text color="#FFBF00">{'>'} </Text>
+					<TextInput
+						value={inputValue}
+						onChange={setInputValue}
+						showCursor={mode === 'input'}
+						key={inputKey}
+						placeholder="Enter your prompt"
+						onSubmit={() => {
+							handleInputChange(inputValue);
+						}}
+					/>
+				</Box>
+			)}
 
 			{mode !== 'input' && (
 				<Box marginTop={1}>
