@@ -8,6 +8,7 @@ import {handleHelpCommands} from './utils/help-commands.js';
 import {BerkeliumRouter} from './core/router.js';
 import Spinner from 'ink-spinner';
 import useProgressStore from './store/progress.js';
+import { BERKELIUM_PERSONAS } from './personas/index.js';
 const berkeliumPromptRouter = new BerkeliumRouter();
 
 export const BerkeliumCLI = () => {
@@ -22,15 +23,6 @@ export const BerkeliumCLI = () => {
 	const [isRunning, setIsRunning] = useState(true);
 	const [isLoading, setIsLoading] = useState(false);
   const { progress, resetProgress, setProgress } = useProgressStore();
-
-	// Predefined list for @
-	const roleItems = [
-		{label: 'BA', value: 'BA'},
-		{label: 'PM', value: 'PM'},
-		{label: 'Dev', value: 'Dev'},
-		{label: 'Tester', value: 'Tester'},
-		{label: 'DevOps', value: 'DevOps'},
-	];
 
 	useEffect(() => {
 		// Handle mode changes and filtering
@@ -75,7 +67,7 @@ export const BerkeliumCLI = () => {
 		} else if (mode === 'roles') {
 			const search = searchInput.toLowerCase();
 			setFilteredItems(
-				roleItems.filter(item => item.label.toLowerCase().includes(search)),
+				BERKELIUM_PERSONAS.filter(item => item.label.toLowerCase().includes(search)),
 			);
 		}
 	};
