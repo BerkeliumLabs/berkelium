@@ -2,7 +2,8 @@
 	"extends": "@sindresorhus/tsconfig",
 	"compilerOptions": {
 		"outDir": "dist",
-		"typeRoots": ["./types", "./node_modules/@types"]
+		"typeRoots": ["./types", "./node_modules/@types"],
+		"lib": ["es2022", "dom"]
 	},
-		"include": ["source", "types"]
+	"include": ["source", "types"]
 }

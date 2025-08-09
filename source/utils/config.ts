@@ -142,22 +142,22 @@ export class ConfigManager {
 				);
 
 				if (!value.trim()) {
-          console.error('🔴 API key cannot be empty')
+					console.error('🔴 API key cannot be empty');
 					return false;
 				}
 				if (!value.startsWith('AIza')) {
-          console.error('🔴 Invalid API key format.');
+					console.error('🔴 Invalid API key format.');
 					return false;
 				}
 
 				await this.saveApiKey(value.trim());
 				console.log(chalk.green('🟢 API key saved successfully!\n'));
-        return true;
+				return true;
 			}
 		} catch (error) {
 			console.error('🔴 Failed to configure API key:', error);
 			process.exit(1);
 		}
-    return false;
+		return false;
 	}
 }

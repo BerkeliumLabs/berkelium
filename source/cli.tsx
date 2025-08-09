@@ -2,7 +2,7 @@
 import React from 'react';
 import {render} from 'ink';
 import chalk from 'chalk';
-import { AppShell } from './shell.js';
+import {AppShell} from './shell.js';
 
 // Welcome message
 const [{default: figlet}, {default: gradient}] = await Promise.all([
@@ -22,7 +22,7 @@ const welcomeArt = coolGradient(
 
 const instructions = chalk.blueBright(
 	`Version ${process.env['npm_package_version']}
-Type your questions or commands. Use "help" for available commands, "exit" or "quit" to leave.\n`
+Type your questions or commands. Use "help" for available commands, "exit" or "quit" to leave.\n`,
 );
 
 console.log(welcomeArt);

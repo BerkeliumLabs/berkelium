@@ -24,7 +24,8 @@ export const AppShell = () => {
 			) : (
 				<Box flexDirection="column" marginTop={1}>
 					<Link url="https://aistudio.google.com/apikey">
-						Please configure your API key first. <Text color="#FF6F00">Get your API key.</Text>
+						Please configure your API key first.{' '}
+						<Text color="#FF6F00">Get your API key.</Text>
 					</Link>
 					<Box
 						borderStyle="round"
@@ -32,7 +33,11 @@ export const AppShell = () => {
 						paddingX={1}
 						paddingY={0}
 					>
-						<TextInput value={''} onChange={handleConfiguration} />
+						<TextInput
+							value={''}
+							onChange={handleConfiguration}
+							placeholder="Enter your API key..."
+						/>
 					</Box>
 				</Box>
 			)}
