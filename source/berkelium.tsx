@@ -50,6 +50,7 @@ export const BerkeliumCLI = () => {
 
 	useInput((input, key) => {
 		if (key.ctrl && (input === 'c' || input === 'C')) {
+      console.log(chalk.yellowBright('Press Ctrl+C again to exit.'))
 			handleExit();
 		}
 	});
@@ -78,7 +79,7 @@ export const BerkeliumCLI = () => {
 			return;
 		}
 
-		console.log(`🔵 ${value}`);
+		console.log(`🔵 ${value}\n`);
 		setInputValue(''); // Clear input after submission
 		if (value === 'exit' || value === 'quit') {
 			handleExit();
