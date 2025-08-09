@@ -90,19 +90,19 @@ export const BerkeliumCLI = () => {
 		setInputValue(''); // Clear input after submission
 		setIsLoading(true);
 		try {
-			const response = await berkeliumPromptRouter.routePrompt(value);
-      setIsLoading(false);
-			console.log(`🟢 ${response}\n`);
+      // Handle common commands
+      if (value === 'exit' || value === 'quit') {
+        handleExit();
+      } else if (value === 'help') {
+        handleHelpCommands();
+      } else {
+        const response = await berkeliumPromptRouter.routePrompt(value);
+        setIsLoading(false);
+        console.log(`🟢 ${response}\n`);
+      }
 		} catch (error) {
 			setIsLoading(false);
 			console.error(`🔴 Error occurred while processing prompt: ${error}`);
-		}
-
-    // Handle common commands
-		if (value === 'exit' || value === 'quit') {
-			handleExit();
-		} else if (value === 'help') {
-			handleHelpCommands();
 		}
 	};
 

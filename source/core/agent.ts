@@ -7,14 +7,17 @@ import { executeTool } from "../tools/executor.js";
 import { ToolMessage } from "@langchain/core/messages";
 import { ToolCall } from "@langchain/core/messages/tool";
 import useProgressStore from "../store/progress.js";
+import { BerkeliumContextManager } from "./context-manager.js";
 
 export class BerkeliumAgent {
   private configManager: ConfigManager;
+  private contextManager: BerkeliumContextManager;
 
   public berkeliumAgent!: ReturnType<typeof createReactAgent>;
 
   constructor() {
     this.configManager = ConfigManager.getInstance();
+    this.contextManager = new BerkeliumContextManager();
     this.initializeContext();
   }
 
@@ -47,8 +50,10 @@ export class BerkeliumAgent {
   }
 
   async generateResponse(prompt: string): Promise<string> {
+    this.contextManager.initializeContext();
+    
     const systemMessage = new SystemMessage(
-      "You are Berkelium, a powerful AI assistant designed to help users with various tasks."
+      this.contextManager.context
     );
 
     let messages = [systemMessage, new HumanMessage(prompt)];
