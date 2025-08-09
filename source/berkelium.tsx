@@ -8,11 +8,11 @@ import {handleHelpCommands} from './utils/help-commands.js';
 import {BerkeliumRouter} from './core/router.js';
 import Spinner from 'ink-spinner';
 import useProgressStore from './store/progress.js';
-import { BERKELIUM_PERSONAS } from './personas/index.js';
+import {BERKELIUM_PERSONAS} from './personas/index.js';
+import {usePersonaStore} from './store/context.js';
 const berkeliumPromptRouter = new BerkeliumRouter();
 
 export const BerkeliumCLI = () => {
-
 	const [inputValue, setInputValue] = useState('');
 	const [mode, setMode] = useState('input');
 	const [filteredItems, setFilteredItems] = useState<
@@ -22,7 +22,8 @@ export const BerkeliumCLI = () => {
 	const [inputKey, setInputKey] = useState(0);
 	const [isRunning, setIsRunning] = useState(true);
 	const [isLoading, setIsLoading] = useState(false);
-  const { progress, resetProgress, setProgress } = useProgressStore();
+	const {progress, resetProgress, setProgress} = useProgressStore();
+	const {persona} = usePersonaStore();
 
 	useEffect(() => {
 		// Handle mode changes and filtering
@@ -67,7 +68,9 @@ export const BerkeliumCLI = () => {
 		} else if (mode === 'roles') {
 			const search = searchInput.toLowerCase();
 			setFilteredItems(
-				BERKELIUM_PERSONAS.filter(item => item.label.toLowerCase().includes(search)),
+				BERKELIUM_PERSONAS.filter(item =>
+					item.label.toLowerCase().includes(search),
+				),
 			);
 		}
 	};
@@ -82,17 +85,23 @@ export const BerkeliumCLI = () => {
 		setInputValue(''); // Clear input after submission
 		setIsLoading(true);
 		try {
-      // Handle common commands
-      if (value === 'exit' || value === 'quit') {
-        handleExit();
-      } else if (value === 'help') {
-        handleHelpCommands();
-      } else {
-        const response = await berkeliumPromptRouter.routePrompt(value);
-        setIsLoading(false);
-        resetProgress();
-        console.log(`🟢 ${response}\n`);
-      }
+			// Handle common commands
+			if (value === 'exit' || value === 'quit') {
+				handleExit();
+			} else if (value === 'help') {
+				handleHelpCommands();
+			} else {
+				const response = await berkeliumPromptRouter.routePrompt(value);
+				setIsLoading(false);
+				resetProgress();
+				if (persona) {
+					console.log(
+						`🟢 ${chalk.bgBlue(persona)} ${response}\n`,
+					);
+				} else {
+					console.log(`🟢 ${response}\n`);
+				}
+			}
 		} catch (error) {
 			setIsLoading(false);
 			console.error(`🔴 Error occurred while processing prompt: ${error}`);
@@ -136,11 +145,11 @@ export const BerkeliumCLI = () => {
 					<Text color="green">
 						<Spinner type="dots" />
 					</Text>
-					{ ` ${progress}` }
+					{` ${progress}`}
 				</Text>
 			)}
 
-			{(isRunning && !isLoading) && (
+			{isRunning && !isLoading && (
 				<Box
 					borderStyle="round"
 					borderColor="#FFBF00"
