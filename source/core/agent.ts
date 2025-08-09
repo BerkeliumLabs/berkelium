@@ -36,11 +36,11 @@ export class BerkeliumAgent {
         tools,
       });
 
-      console.log("✅ Context Manager initialized successfully");
+      // console.log("✅ Context Manager initialized successfully");
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      console.error("❌ Failed to initialize Context Manager:", errorMessage);
+      console.error("🔴 Failed to initialize Context Manager:", errorMessage);
       process.exit(1);
     }
   }
@@ -57,7 +57,7 @@ export class BerkeliumAgent {
     try {
       for (let turn = 0; turn < maxTurns; turn++) {
         const result = await this.berkeliumAgent.invoke({ messages });
-        console.log("✅ Response generated successfully", result);
+        // console.log("✅ Response generated successfully", result);
 
         if (result['tool_calls'] && result['tool_calls'].length > 0) {
           console.log("🔧 Tool calls detected:", result['tool_calls']);
@@ -85,7 +85,7 @@ export class BerkeliumAgent {
             );
           });
         } else {
-          console.log("✅ No tool calls detected, finalizing response.", result);
+          // console.log("✅ No tool calls detected, finalizing response.", result);
           finalAnswer = result['messages'].at(-1)?.content || "";
           break;
         }

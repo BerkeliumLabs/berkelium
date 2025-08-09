@@ -1,16 +1,4 @@
 /**
- * Configuration for web search
- */
-export interface WebSearchConfig {
-  provider: 'google' | 'bing' | 'duckduckgo';
-  apiKey?: string;
-  searchEngineId?: string; // For Google Custom Search
-  maxResults?: number;
-  language?: string;
-  region?: string;
-}
-
-/**
  * Search result interface
  */
 export interface SearchResult {
@@ -29,14 +17,12 @@ export interface WebSearchResponse {
   results: SearchResult[];
   totalResults?: number;
   searchTime?: number;
-  provider: string;
 }
 
 /**
  * Default configuration for web search
  */
-const DEFAULT_CONFIG: WebSearchConfig = {
-  provider: 'duckduckgo', // Default to DuckDuckGo as it doesn't require API key
+const DEFAULT_CONFIG = {
   maxResults: 10,
   language: 'en',
   region: 'us'
@@ -46,11 +32,7 @@ const DEFAULT_CONFIG: WebSearchConfig = {
  * Web Search Tool for fetching real-time information
  */
 export class WebSearchTool {
-  private config: WebSearchConfig;
-
-  constructor(config: Partial<WebSearchConfig> = {}) {
-    this.config = { ...DEFAULT_CONFIG, ...config };
-  }
+  private config = DEFAULT_CONFIG;
 
   /**
    * Perform a web search query
@@ -60,18 +42,7 @@ export class WebSearchTool {
       const startTime = Date.now();
       let results: SearchResult[] = [];
 
-      switch (this.config.provider) {
-        case 'google':
-          results = await this.searchGoogle(query);
-          break;
-        case 'bing':
-          results = await this.searchBing(query);
-          break;
-        case 'duckduckgo':
-        default:
-          results = await this.searchDuckDuckGo(query);
-          break;
-      }
+      results = await this.searchDuckDuckGo(query);
 
       const searchTime = Date.now() - startTime;
 
@@ -79,8 +50,7 @@ export class WebSearchTool {
         query,
         results: results.slice(0, this.config.maxResults),
         totalResults: results.length,
-        searchTime,
-        provider: this.config.provider
+        searchTime
       };
 
       return {
@@ -96,89 +66,6 @@ export class WebSearchTool {
         error: `Web search failed: ${errorMessage}`
       };
     }
-  }
-
-  /**
-   * Search using Google Custom Search API
-   */
-  private async searchGoogle(query: string): Promise<SearchResult[]> {
-    if (!this.config.apiKey || !this.config.searchEngineId) {
-      throw new Error('Google search requires API key and search engine ID');
-    }
-
-    const url = new URL('https://www.googleapis.com/customsearch/v1');
-    url.searchParams.append('key', this.config.apiKey);
-    url.searchParams.append('cx', this.config.searchEngineId);
-    url.searchParams.append('q', query);
-    url.searchParams.append('num', Math.min(this.config.maxResults || 10, 10).toString());
-
-    if (this.config.language) {
-      url.searchParams.append('lr', `lang_${this.config.language}`);
-    }
-
-    const response = await fetch(url.toString());
-    
-    if (!response.ok) {
-      throw new Error(`Google search API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json() as any;
-
-    if (!data.items) {
-      return [];
-    }
-
-    return data.items.map((item: any): SearchResult => ({
-      title: item.title,
-      url: item.link,
-      snippet: item.snippet,
-      displayUrl: item.displayLink,
-      date: item.pagemap?.metatags?.[0]?.['article:published_time']
-    }));
-  }
-
-  /**
-   * Search using Bing Search API
-   */
-  private async searchBing(query: string): Promise<SearchResult[]> {
-    if (!this.config.apiKey) {
-      throw new Error('Bing search requires API key');
-    }
-
-    const url = new URL('https://api.bing.microsoft.com/v7.0/search');
-    url.searchParams.append('q', query);
-    url.searchParams.append('count', (this.config.maxResults || 10).toString());
-
-    if (this.config.language) {
-      url.searchParams.append('setLang', this.config.language);
-    }
-    if (this.config.region) {
-      url.searchParams.append('cc', this.config.region);
-    }
-
-    const response = await fetch(url.toString(), {
-      headers: {
-        'Ocp-Apim-Subscription-Key': this.config.apiKey
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Bing search API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json() as any;
-
-    if (!data.webPages?.value) {
-      return [];
-    }
-
-    return data.webPages.value.map((item: any): SearchResult => ({
-      title: item.name,
-      url: item.url,
-      snippet: item.snippet,
-      displayUrl: item.displayUrl,
-      date: item.dateLastCrawled
-    }));
   }
 
   /**
@@ -251,20 +138,6 @@ export class WebSearchTool {
       }];
     }
   }
-
-  /**
-   * Update search configuration
-   */
-  updateConfig(newConfig: Partial<WebSearchConfig>): void {
-    this.config = { ...this.config, ...newConfig };
-  }
-
-  /**
-   * Get current configuration
-   */
-  getConfig(): WebSearchConfig {
-    return { ...this.config };
-  }
 }
 
 // Default instance
@@ -278,15 +151,9 @@ export async function webSearch(
   maxResults?: number
 ): Promise<ToolResult> {
   if (maxResults) {
-    webSearchTool.updateConfig({ maxResults });
+    webSearchTool['config'].maxResults = maxResults;
   }
   
   return webSearchTool.search(query);
 }
 
-/**
- * Configure web search provider and settings
- */
-export function configureWebSearch(config: Partial<WebSearchConfig>): void {
-  webSearchTool.updateConfig(config);
-}

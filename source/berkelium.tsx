@@ -5,8 +5,12 @@ import SelectInput from 'ink-select-input';
 import {readdirSync} from 'fs';
 import chalk from 'chalk';
 import {handleHelpCommands} from './utils/help-commands.js';
+import {BerkeliumRouter} from './core/router.js';
+import Spinner from 'ink-spinner';
+const berkeliumPromptRouter = new BerkeliumRouter();
 
 export const BerkeliumCLI = () => {
+
 	const [inputValue, setInputValue] = useState('');
 	const [mode, setMode] = useState('input');
 	const [filteredItems, setFilteredItems] = useState<
@@ -15,6 +19,7 @@ export const BerkeliumCLI = () => {
 	const [isSelecting, setIsSelecting] = useState(false);
 	const [inputKey, setInputKey] = useState(0);
 	const [isRunning, setIsRunning] = useState(true);
+	const [isLoading, setIsLoading] = useState(false);
 
 	// Predefined list for @
 	const roleItems = [
@@ -50,7 +55,7 @@ export const BerkeliumCLI = () => {
 
 	useInput((input, key) => {
 		if (key.ctrl && (input === 'c' || input === 'C')) {
-      console.log(chalk.yellowBright('Press Ctrl+C again to exit.'))
+			console.log(chalk.yellowBright('Press Ctrl+C again to exit.'));
 			handleExit();
 		}
 	});
@@ -73,7 +78,7 @@ export const BerkeliumCLI = () => {
 		}
 	};
 
-	const handleInputChange = (value: string) => {
+	const handleInputChange = async (value: string) => {
 		if (isSelecting) {
 			setIsSelecting(false);
 			return;
@@ -81,6 +86,17 @@ export const BerkeliumCLI = () => {
 
 		console.log(`🔵 ${value}\n`);
 		setInputValue(''); // Clear input after submission
+		setIsLoading(true);
+		try {
+			const response = await berkeliumPromptRouter.routePrompt(value);
+      setIsLoading(false);
+			console.log(`🟢 ${response}\n`);
+		} catch (error) {
+			setIsLoading(false);
+			console.error(`🔴 Error occurred while processing prompt: ${error}`);
+		}
+
+    // Handle common commands
 		if (value === 'exit' || value === 'quit') {
 			handleExit();
 		} else if (value === 'help') {
@@ -118,6 +134,16 @@ export const BerkeliumCLI = () => {
 
 	return (
 		<Box flexDirection="column">
+			{/* Loading indicator */}
+			{isLoading && (
+				<Text>
+					<Text color="green">
+						<Spinner type="dots" />
+					</Text>
+					{' Thinking...'}
+				</Text>
+			)}
+
 			{isRunning && (
 				<Box
 					borderStyle="round"

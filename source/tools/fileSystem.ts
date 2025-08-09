@@ -52,7 +52,7 @@ export async function writeFile(args: {
 	createDirectories?: boolean;
 }): Promise<ToolResult> {
 	const {filePath, content, createDirectories} = args;
-	console.log(`Writing to file: ${filePath}`);
+	console.log(`💬 Writing to file: ${filePath}`);
 	try {
 		// Resolve the path to handle relative paths
 		const resolvedPath = resolve(filePath);
