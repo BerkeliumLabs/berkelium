@@ -8,7 +8,7 @@ import {handleHelpCommands} from './utils/help-commands.js';
 import {BerkeliumRouter} from './core/router.js';
 import Spinner from 'ink-spinner';
 import useProgressStore from './store/progress.js';
-import {BERKELIUM_PERSONAS} from './personas/index.js';
+import {BERKELIUM_PERSONAS} from './const/personas.js';
 import {usePersonaStore} from './store/context.js';
 import { useUsageMetaDataStore } from './store/usage.js';
 const berkeliumPromptRouter = new BerkeliumRouter();

@@ -4,7 +4,7 @@
 import {usePersonaStore} from '../store/context.js';
 import {BerkeliumAgent} from './agent.js';
 import {BerkeliumContextManager} from './context-manager.js';
-import { BERKELIUM_PERSONAS } from '../personas/index.js';
+import { BERKELIUM_PERSONAS } from '../const/personas.js';
 
 export class BerkeliumRouter {
 	private contextManager: BerkeliumContextManager;

@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { BERKELIUM_PERSONAS } from "../personas/index.js";
+import { BERKELIUM_PERSONAS } from "../const/personas.js";
 import { usePersonaStore } from "../store/context.js";
 
 export class BerkeliumContextManager {
