@@ -1,6 +1,6 @@
 # Berkelium - Your AI Coding Companion ✨💻
 
-![Berkelium Dev CLI](https://github.com/BerkeliumLabs/berkelium/tree/main/public/berkelium-dev-cli.png)
+![Berkelium Dev CLI](https://raw.githubusercontent.com/BerkeliumLabs/berkelium/refs/heads/main/public/berkelium-dev-cli.png?token=GHSAT0AAAAAADHTSEAHMHH324TTK7FM77S62EYXNFA)
 
 Welcome to Berkelium, an intelligent AI assistant that lives in your terminal. Powered by Node.js, TypeScript, and the Google Gemini API, Berkelium is here to help you with your coding tasks, answer your questions, and streamline your workflow.
 
