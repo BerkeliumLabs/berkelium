@@ -1,31 +1,94 @@
 {
-  "name": "berkelium",
-  "version": "0.1.0",
-  "description": "Agentic AI Code Assistant CLI",
-  "main": "dist/berkelium.js",
-  "bin": {
-    "berkelium": "./dist/berkelium.js"
-  },
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "start": "node --env-file=../.env dist/berkelium.js",
-    "clean": "rimraf dist"
-  },
-  "keywords": ["ai", "cli", "assistant", "gemini", "typescript"],
-  "author": "BerkeliumLabs",
-  "license": "MIT",
-  "dependencies": {
-    "@google/generative-ai": "^0.21.0",
-    "@inquirer/prompts": "^7.0.1",
-    "@inquirer/confirm": "^4.0.1"
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "rimraf": "^6.0.1",
-    "typescript": "^5.6.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  }
+	"name": "berkelium",
+	"description": "Your AI Coding Companion ✨💻, an intelligent AI assistant that lives in your terminal. Powered by Node.js, TypeScript, and the Google Gemini API, Berkelium helps you with coding tasks, answers your questions, and streamlines your workflow.",
+	"version": "0.1.0-beta.0",
+	"license": "MIT",
+	"bin": {
+		"berkelium": "dist/cli.js"
+	},
+	"type": "module",
+	"engines": {
+		"node": ">=16"
+	},
+	"scripts": {
+		"start": "npm run build && node dist/cli.js",
+		"build": "node scripts/build.js",
+		"build:prod": "node scripts/build-prod.js",
+		"dev": "node scripts/dev.js",
+		"build:tsc": "tsc",
+		"test": "prettier --check . && xo && ava"
+	},
+	"files": [
+		"dist",
+		"assets"
+	],
+	"dependencies": {
+		"@langchain/core": "^0.3.66",
+		"@langchain/google-genai": "^0.2.16",
+		"@langchain/langgraph": "^0.4.0",
+		"@langchain/mcp-adapters": "^0.6.0",
+		"figlet": "^1.8.2",
+		"gradient-string": "^3.0.0",
+		"ink-spinner": "^5.0.0",
+		"meow": "^11.0.0",
+		"react": "^18.2.0",
+		"zustand": "^5.0.7"
+	},
+	"devDependencies": {
+		"@sindresorhus/tsconfig": "^3.0.1",
+		"@types/figlet": "^1.7.0",
+		"@types/node": "^24.2.1",
+		"@types/react": "^18.0.32",
+		"@vdemedes/prettier-config": "^2.0.1",
+		"ava": "^5.2.0",
+		"chalk": "^5.5.0",
+		"dotenv": "^17.2.1",
+		"esbuild": "^0.25.8",
+		"eslint-config-xo-react": "^0.27.0",
+		"eslint-plugin-react": "^7.32.2",
+		"eslint-plugin-react-hooks": "^4.6.0",
+		"ink": "^4.1.0",
+		"ink-link": "^4.1.0",
+		"ink-select-input": "^6.2.0",
+		"ink-testing-library": "^3.0.0",
+		"ink-text-input": "^6.0.0",
+		"prettier": "^2.8.7",
+		"react-devtools-core": "^6.1.5",
+		"ts-node": "^10.9.1",
+		"typescript": "^5.0.3",
+		"xo": "^0.53.1"
+	},
+	"ava": {
+		"extensions": {
+			"ts": "module",
+			"tsx": "module"
+		},
+		"nodeArguments": [
+			"--loader=ts-node/esm"
+		]
+	},
+	"xo": {
+		"extends": "xo-react",
+		"prettier": true,
+		"rules": {
+			"react/prop-types": "off"
+		}
+	},
+	"prettier": "@vdemedes/prettier-config",
+	"keywords": [
+		"cli",
+		"ai",
+		"coding",
+		"assistant",
+		"berkelium",
+		"gemini",
+		"node",
+		"typescript"
+	],
+	"author": "BerkeliumLabs",
+	"homepage": "https://berkelium.dev",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/BerkeliumLabs/berkelium.git"
+	}
 }

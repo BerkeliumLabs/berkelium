@@ -1,0 +1,2 @@
+- if no file path is given to create a file, use this path as root './temp'.
+- do not create files at root.
