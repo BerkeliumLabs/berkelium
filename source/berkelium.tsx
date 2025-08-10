@@ -15,6 +15,7 @@ const berkeliumPromptRouter = new BerkeliumRouter();
 export const BerkeliumCLI = () => {
 	const [inputValue, setInputValue] = useState('');
 	const [mode, setMode] = useState('input');
+	const [threadId, setThreadId] = useState('');
 	const [filteredItems, setFilteredItems] = useState<
 		{label: string; value: string}[]
 	>([]);
@@ -24,6 +25,10 @@ export const BerkeliumCLI = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const {progress, resetProgress, setProgress} = useProgressStore();
 	const {persona} = usePersonaStore();
+
+	useEffect(() => {
+		setThreadId(Date.now().toString());
+	}, []);
 
 	useEffect(() => {
 		// Handle mode changes and filtering
@@ -91,7 +96,7 @@ export const BerkeliumCLI = () => {
 			} else if (value === 'help') {
 				handleHelpCommands();
 			} else {
-				const response = await berkeliumPromptRouter.routePrompt(value);
+				const response = await berkeliumPromptRouter.routePrompt(value, threadId);
 				setIsLoading(false);
 				resetProgress();
 				if (persona) {
@@ -130,7 +135,7 @@ export const BerkeliumCLI = () => {
 		setProgress('Exiting...');
 		const exitMessage = chalk
 			.hex('#FF6F00')
-			.bold('\n👋 Goodbye! Thanks for using Berkelium.');
+			.bold('\n👋 Goodbye! Thanks for using Berkelium.\n');
 		console.log(exitMessage);
 		setTimeout(() => {
 			process.exit(0);

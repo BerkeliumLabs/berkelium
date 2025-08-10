@@ -7,14 +7,17 @@ import { executeTool } from "../tools/executor.js";
 import { ToolMessage } from "@langchain/core/messages";
 import { ToolCall } from "@langchain/core/messages/tool";
 import useProgressStore from "../store/progress.js";
+import { MemorySaver } from "@langchain/langgraph";
 
 export class BerkeliumAgent {
   private configManager: ConfigManager;
 
   public berkeliumAgent!: ReturnType<typeof createReactAgent>;
+  private memory: MemorySaver;
 
   constructor() {
     this.configManager = ConfigManager.getInstance();
+    this.memory = new MemorySaver();
     this.initializeContext();
   }
 
@@ -35,6 +38,7 @@ export class BerkeliumAgent {
       this.berkeliumAgent = createReactAgent({
         llm,
         tools,
+        checkpointer: this.memory,
       });
 
       // console.log("✅ Context Manager initialized successfully");
@@ -46,50 +50,67 @@ export class BerkeliumAgent {
     }
   }
 
-  async generateResponse(prompt: string, context: string): Promise<string> {
-    const systemMessage = new SystemMessage(
-      context
-    );
-
-    let messages = [systemMessage, new HumanMessage(prompt)];
+  async generateResponse(
+    prompt: string,
+    context: string,
+    threadId: string
+  ): Promise<string> {
+    const config = {
+      configurable: {
+        thread_id: threadId,
+      },
+    };
+    const checkpoint = await this.memory.get(config);
+    const currentMessages = checkpoint?.channel_values["messages"] ?? [];
+    let messages: (SystemMessage | HumanMessage | ToolMessage)[] = [];
+    if (Array.isArray(currentMessages) && currentMessages.length === 0) {
+      messages.push(new SystemMessage(context));
+    }
+    messages.push(new HumanMessage(prompt));
     let finalAnswer = "";
     const maxTurns = 5;
 
     try {
       for (let turn = 0; turn < maxTurns; turn++) {
-        const result = await this.berkeliumAgent.invoke({ messages });
+        const result = await this.berkeliumAgent.invoke(
+          { messages },
+          {
+            configurable: {
+              thread_id: threadId,
+            },
+          }
+        );
         // console.log("✅ Response generated successfully", result);
 
-        if (result['tool_calls'] && result['tool_calls'].length > 0) {
+        if (result["tool_calls"] && result["tool_calls"].length > 0) {
           // console.log("🔧 Tool calls detected:", result['tool_calls']);
 
           // Run all tool calls in parallel
           const toolResults = await Promise.all(
-            result['tool_calls'].map(async (toolCall: ToolCall) => {
+            result["tool_calls"].map(async (toolCall: ToolCall) => {
               const toolResult = await executeTool(
                 toolCall.name,
                 toolCall.args
               );
               console.log("🔧 Tool result:", toolResult);
-              useProgressStore.getState().setProgress( toolResult || "Tool executed successfully");
+              useProgressStore
+                .getState()
+                .setProgress(toolResult || "Tool executed successfully");
               return {
-                name: toolCall.name,
+                tool_call_id: toolCall.id,
                 result: toolResult,
               };
             })
           );
+          const toolMessages = toolResults.map(
+            ({ result, tool_call_id }) => new ToolMessage(result, tool_call_id)
+          );
 
           // Feed tool results back to the agent as system messages
-          toolResults.forEach(({ result }) => {
-            messages.push(
-              new ToolMessage(
-                result
-              )
-            );
-          });
+          messages = [...messages, ...toolMessages];
         } else {
           // console.log("✅ No tool calls detected, finalizing response.", result);
-          finalAnswer = result['messages'].at(-1)?.content || "";
+          finalAnswer = result["messages"].at(-1)?.content || "";
           break;
         }
       }
@@ -97,7 +118,7 @@ export class BerkeliumAgent {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      throw new Error(`Berkelium Agent API error: ${errorMessage}`);
+      throw new Error(`🔴 Berkelium Agent API error: ${errorMessage}`);
     }
   }
 }
