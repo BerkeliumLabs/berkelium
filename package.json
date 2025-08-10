@@ -1,5 +1,6 @@
 {
 	"name": "berkelium",
+	"description": "Your AI Coding Companion ✨💻, an intelligent AI assistant that lives in your terminal. Powered by Node.js, TypeScript, and the Google Gemini API, Berkelium helps you with coding tasks, answers your questions, and streamlines your workflow.",
 	"version": "0.1.0-beta.0",
 	"license": "MIT",
 	"bin": {
@@ -41,6 +42,7 @@
 		"@vdemedes/prettier-config": "^2.0.1",
 		"ava": "^5.2.0",
 		"chalk": "^5.5.0",
+		"dotenv": "^17.2.1",
 		"esbuild": "^0.25.8",
 		"eslint-config-xo-react": "^0.27.0",
 		"eslint-plugin-react": "^7.32.2",
@@ -74,10 +76,13 @@
 	},
 	"prettier": "@vdemedes/prettier-config",
 	"keywords": [
-		"ai",
 		"cli",
+		"ai",
+		"coding",
 		"assistant",
+		"berkelium",
 		"gemini",
+		"node",
 		"typescript"
 	],
 	"author": "BerkeliumLabs",

@@ -31,7 +31,7 @@ export class BerkeliumAgent {
 
       // Initialize the context manager with the API key
       const llm = new ChatGoogleGenerativeAI({
-        model: "gemini-2.5-flash-lite",
+        model: process.env['GEMINI_MODEL'] || "gemini-2.5-flash-lite",
         maxOutputTokens: 2048,
         apiKey: apiKey,
       });
