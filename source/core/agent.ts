@@ -2,12 +2,13 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ConfigManager } from "../utils/config.js";
 import { tools } from "../tools/index.js";
-import { SystemMessage, HumanMessage } from "@langchain/core/messages";
+import { SystemMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
 import { executeTool } from "../tools/executor.js";
 import { ToolMessage } from "@langchain/core/messages";
 import { ToolCall } from "@langchain/core/messages/tool";
 import useProgressStore from "../store/progress.js";
 import { MemorySaver } from "@langchain/langgraph";
+import { useUsageMetaDataStore } from "../store/usage.js";
 
 export class BerkeliumAgent {
   private configManager: ConfigManager;
@@ -110,7 +111,32 @@ export class BerkeliumAgent {
           messages = [...messages, ...toolMessages];
         } else {
           // console.log("✅ No tool calls detected, finalizing response.", result);
-          finalAnswer = result["messages"].at(-1)?.content || "";
+          const aiContent = (result["messages"].at(-1) as AIMessage)?.content;
+          if (typeof aiContent === "string") {
+            finalAnswer = aiContent;
+          } else if (Array.isArray(aiContent)) {
+            finalAnswer = aiContent
+              .map(item => {
+                if (typeof item === "string") {
+                  return item;
+                } else if ("text" in item && typeof item.text === "string") {
+                  return item.text;
+                } else if ("image_url" in item && typeof item.image_url === "string") {
+                  // Optionally handle image URLs or return a placeholder
+                  return "[Image]";
+                }
+                return "";
+              })
+              .join(" ");
+          } else {
+            finalAnswer = "";
+          }
+          const usageMetaData = (result["messages"].at(-1) as AIMessage)?.usage_metadata ?? {
+            input_tokens: 0,
+            output_tokens: 0,
+            total_tokens: 0,
+          };
+          useUsageMetaDataStore.getState().setUsageMetaData(usageMetaData);
           break;
         }
       }

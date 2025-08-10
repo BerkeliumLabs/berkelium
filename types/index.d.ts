@@ -22,5 +22,16 @@ declare global {
 		persona: string;
 		setPersona: (persona: string) => void;
 	};
+	interface IUsageMetadata {
+		input_tokens: number;
+		output_tokens: number;
+		total_tokens: number;
+	}
+	type UsageMetaDataStore = {
+		input_tokens: number;
+		output_tokens: number;
+		total_tokens: number;
+		setUsageMetaData: (data: IUsageMetadata) => void;
+	};
 }
 export {};

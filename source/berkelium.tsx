@@ -10,6 +10,7 @@ import Spinner from 'ink-spinner';
 import useProgressStore from './store/progress.js';
 import {BERKELIUM_PERSONAS} from './personas/index.js';
 import {usePersonaStore} from './store/context.js';
+import { useUsageMetaDataStore } from './store/usage.js';
 const berkeliumPromptRouter = new BerkeliumRouter();
 
 export const BerkeliumCLI = () => {
@@ -25,6 +26,7 @@ export const BerkeliumCLI = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const {progress, resetProgress, setProgress} = useProgressStore();
 	const {persona} = usePersonaStore();
+	const {input_tokens, output_tokens, total_tokens} = useUsageMetaDataStore();
 
 	useEffect(() => {
 		setThreadId(Date.now().toString());
@@ -180,6 +182,15 @@ export const BerkeliumCLI = () => {
 					<SelectInput items={filteredItems} onSelect={handleSelectChange} />
 				</Box>
 			)}
+
+			{/* Footer */}
+			<Box marginTop={1}>
+				<Box>
+					<Text color="#FFBF00">Input Tokens: {input_tokens} | </Text>
+					<Text color="#FFBF00">Output Tokens: {output_tokens} | </Text>
+					<Text color="#FFBF00">Total Tokens: {total_tokens}</Text>
+				</Box>
+			</Box>
 		</Box>
 	);
 };
