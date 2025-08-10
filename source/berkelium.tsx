@@ -97,6 +97,7 @@ export const BerkeliumCLI = () => {
 				handleExit();
 			} else if (value === 'help') {
 				handleHelpCommands();
+				setIsLoading(false);
 			} else {
 				const response = await berkeliumPromptRouter.routePrompt(value, threadId);
 				setIsLoading(false);
@@ -134,7 +135,7 @@ export const BerkeliumCLI = () => {
 
 	const handleExit = () => {
 		setIsRunning(false);
-		setProgress('Exiting...');
+		setProgress('Going to sleep...');
 		const exitMessage = chalk
 			.hex('#FF6F00')
 			.bold('\n👋 Goodbye! Thanks for using Berkelium.\n');
@@ -184,7 +185,7 @@ export const BerkeliumCLI = () => {
 			)}
 
 			{/* Footer */}
-			<Box marginTop={1}>
+			<Box marginTop={1} marginBottom={1}>
 				<Box>
 					<Text color="#FFBF00">Input Tokens: {input_tokens} | </Text>
 					<Text color="#FFBF00">Output Tokens: {output_tokens} | </Text>

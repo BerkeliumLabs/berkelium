@@ -69,10 +69,11 @@ export class BerkeliumAgent {
     }
     messages.push(new HumanMessage(prompt));
     let finalAnswer = "";
-    const maxTurns = 5;
+    const maxTurns = 10;
+    let turn = 0;
 
     try {
-      for (let turn = 0; turn < maxTurns; turn++) {
+      for (turn = 0; turn < maxTurns; turn++) {
         const result = await this.berkeliumAgent.invoke(
           { messages },
           {
@@ -111,7 +112,8 @@ export class BerkeliumAgent {
           messages = [...messages, ...toolMessages];
         } else {
           // console.log("✅ No tool calls detected, finalizing response.", result);
-          const aiContent = (result["messages"].at(-1) as AIMessage)?.content;
+          const aiResponse: AIMessage = (result["messages"].at(-1) as AIMessage);
+          const aiContent = aiResponse?.content;
           if (typeof aiContent === "string") {
             finalAnswer = aiContent;
           } else if (Array.isArray(aiContent)) {
@@ -131,7 +133,12 @@ export class BerkeliumAgent {
           } else {
             finalAnswer = "";
           }
-          const usageMetaData = (result["messages"].at(-1) as AIMessage)?.usage_metadata ?? {
+
+          if (aiResponse.response_metadata['finishReason'] !== 'STOP' && turn < maxTurns - 1) {
+            finalAnswer = `Reach ${turn + 1} turns limit. Type "continue" to proceed.`;
+          }
+
+          const usageMetaData = aiResponse?.usage_metadata ?? {
             input_tokens: 0,
             output_tokens: 0,
             total_tokens: 0,

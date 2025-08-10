@@ -18,7 +18,8 @@
 		"test": "prettier --check . && xo && ava"
 	},
 	"files": [
-		"dist"
+		"dist",
+		"assets"
 	],
 	"dependencies": {
 		"@langchain/core": "^0.3.66",
