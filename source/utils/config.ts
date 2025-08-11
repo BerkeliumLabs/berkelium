@@ -62,9 +62,22 @@ export class ConfigManager {
 	public loadConfig(): Config {
 		try {
 			if (!fs.existsSync(this.configPath)) {
-				throw new Error(
+				console.log(
 					`Configuration file not found at ${this.configPath}. ` +
-						'Please create a config.json file in your home directory with your Gemini API key.',
+						'Creating a config.json file in your home directory...\n',
+				);
+
+				const berkeliumConfig = {
+					version: '0.0.1',
+					createdAt: new Date().toISOString(),
+					updatedAt: new Date().toISOString(),
+					geminiApiKey: '',
+				};
+				fs.mkdirSync(path.dirname(this.configPath), {recursive: true});
+				fs.writeFileSync(
+					this.configPath,
+					JSON.stringify(berkeliumConfig, null, 2),
+					'utf8',
 				);
 			}
 
@@ -72,9 +85,9 @@ export class ConfigManager {
 			const config: Config = JSON.parse(configData);
 
 			if (!config.geminiApiKey) {
-				throw new Error(
-					'geminiApiKey is missing from config.json. ' +
-						'Please add your Google Gemini API key to the configuration file.',
+				console.warn(
+					'🟡 geminiApiKey is missing from config.json. ' +
+						'Please add your Google Gemini API key.\n',
 				);
 			}
 

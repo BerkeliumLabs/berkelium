@@ -26,7 +26,8 @@ export class BerkeliumAgent {
     try {
       const apiKey = this.configManager.getApiKey();
       if (!apiKey) {
-        throw new Error("API key is not set in the configuration.");
+        console.error("🔴 API key is not set in the configuration.\n");
+        return;
       }
 
       // Initialize the context manager with the API key
@@ -151,7 +152,7 @@ export class BerkeliumAgent {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      throw new Error(`🔴 Berkelium Agent API error: ${errorMessage}`);
+      return `🔴 Berkelium Agent API error: ${errorMessage}`;
     }
   }
 }
