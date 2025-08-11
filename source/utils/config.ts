@@ -164,8 +164,8 @@ export class ConfigManager {
 				}
 
 				await this.saveApiKey(value.trim());
-				console.log(chalk.green('🟢 API key saved successfully!\n'));
-				return true;
+				console.log(chalk.green('🟢 API key saved successfully! Restart Berkelium to apply changes.\n'));
+				process.exit(0);
 			}
 		} catch (error) {
 			console.error('🔴 Failed to configure API key:', error);
