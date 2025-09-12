@@ -29,7 +29,7 @@ export const AppShell = () => {
 					</Link>
 					<Box
 						borderStyle="round"
-						borderColor="#FFBF00"
+						borderColor="#e05d38"
 						paddingX={1}
 						paddingY={0}
 					>

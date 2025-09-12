@@ -9,7 +9,7 @@ const [{default: figlet}, {default: gradient}] = await Promise.all([
 	import('gradient-string'),
 ]);
 
-const coolGradient = gradient(['#FFA800', '#FF6F00']);
+const coolGradient = gradient(['#e6a08f', '#e05d38']);
 const welcomeArt = coolGradient(
 	figlet.textSync('Berkelium.dev', {
 		font: 'ANSI Shadow',

@@ -160,11 +160,11 @@ export const BerkeliumCLI = () => {
 			{isRunning && !isLoading && (
 				<Box
 					borderStyle="round"
-					borderColor="#FFBF00"
+					borderColor="#e05d38"
 					paddingX={1}
 					paddingY={0}
 				>
-					<Text color="#FFBF00">{'>'} </Text>
+					<Text color="#e05d38">{'>'} </Text>
 					<TextInput
 						value={inputValue}
 						onChange={setInputValue}
@@ -187,9 +187,9 @@ export const BerkeliumCLI = () => {
 			{/* Footer */}
 			<Box marginTop={1} marginBottom={1}>
 				<Box>
-					<Text color="#FFBF00">Input Tokens: {input_tokens} | </Text>
-					<Text color="#FFBF00">Output Tokens: {output_tokens} | </Text>
-					<Text color="#FFBF00">Total Tokens: {total_tokens}</Text>
+					<Text color="#e05d38">Input Tokens: {input_tokens} | </Text>
+					<Text color="#e05d38">Output Tokens: {output_tokens} | </Text>
+					<Text color="#e05d38">Total Tokens: {total_tokens}</Text>
 				</Box>
 			</Box>
 		</Box>
