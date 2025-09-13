@@ -6,6 +6,7 @@ import {
 	glob,
 	searchFileContent,
 	replace,
+	readManyFiles,
 } from './fileSystemNew.js';
 import {runShellCommand} from './shell.js';
 import {
@@ -16,6 +17,7 @@ import {
 	searchFileContentSchema,
 	replaceSchema,
 	runShellCommandSchema,
+	readManyFilesSchema,
 } from './schemaNew.js';
 
 // 1. list_directory (ReadFolder) - Lists files and directories
@@ -74,6 +76,14 @@ export const runShellCommandTool = tool(runShellCommand, {
 	schema: runShellCommandSchema,
 });
 
+// 8. read_many_files - Multi-file reader
+export const readManyFilesTool = tool(readManyFiles, {
+	name: 'read_many_files',
+	description:
+		'Read content from multiple files specified by paths or glob patterns. Concatenates text files with separators and handles binary files (images, PDFs, audio, video) as base64. Supports include/exclude patterns and default exclusions.',
+	schema: readManyFilesSchema,
+});
+
 export const tools = [
 	listDirectoryTool,
 	readFileTool,
@@ -82,4 +92,5 @@ export const tools = [
 	searchFileContentTool,
 	replaceTool,
 	runShellCommandTool,
+	readManyFilesTool,
 ];
