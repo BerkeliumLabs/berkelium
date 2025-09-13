@@ -53,7 +53,7 @@ export async function writeFile(args: {
 	createDirectories?: boolean;
 }): Promise<ToolResult> {
 	const {filePath, content, createDirectories} = args;
-	useProgressStore.getState().setProgress( `Writing to file: ${filePath}`);
+	useProgressStore.getState().setProgress(`Writing to file: ${filePath}`);
 	try {
 		// Resolve the path to handle relative paths
 		const resolvedPath = resolve(filePath);

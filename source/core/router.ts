@@ -1,6 +1,3 @@
-
-
-
 import {BerkeliumAgent} from './agent.js';
 import {BerkeliumContextManager} from './context-manager.js';
 import {executeTool} from '../tools/executor.js';
@@ -21,7 +18,11 @@ export class BerkeliumRouter {
 			const context = this.contextManager.context;
 
 			// Main agent loop - continues until we get a final answer
-			let result = await this.berkeliumAgent.generateResponse(prompt, context, threadId);
+			let result = await this.berkeliumAgent.generateResponse(
+				prompt,
+				context,
+				threadId,
+			);
 
 			while (!result.finished) {
 				if (result.toolCalls && result.toolCalls.length > 0) {
@@ -32,22 +33,26 @@ export class BerkeliumRouter {
 							const executionResult = await executeTool(toolCall);
 							toolResults.push({
 								tool_call_id: toolCall.id ?? '',
-								result: JSON.stringify(executionResult)
+								result: JSON.stringify(executionResult),
 							});
 						} catch (error) {
-							const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+							const errorMessage =
+								error instanceof Error ? error.message : 'Unknown error';
 							toolResults.push({
 								tool_call_id: toolCall.id ?? '',
 								result: JSON.stringify({
 									success: false,
-									error: errorMessage
-								})
+									error: errorMessage,
+								}),
 							});
 						}
 					}
 
 					// Process tool results and continue the conversation
-					result = await this.berkeliumAgent.processToolResults(toolResults, threadId);
+					result = await this.berkeliumAgent.processToolResults(
+						toolResults,
+						threadId,
+					);
 				} else {
 					break;
 				}

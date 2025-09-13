@@ -8,7 +8,7 @@ import {handleHelpCommands} from './utils/help-commands.js';
 import {BerkeliumRouter} from './core/router.js';
 import Spinner from 'ink-spinner';
 import useProgressStore from './store/progress.js';
-import { useUsageMetaDataStore } from './store/usage.js';
+import {useUsageMetaDataStore} from './store/usage.js';
 import usePermissionStore from './store/permission.js';
 import PermissionPrompt from './components/PermissionPrompt.js';
 const berkeliumPromptRouter = new BerkeliumRouter();
@@ -26,7 +26,7 @@ export const BerkeliumCLI = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const {progress, resetProgress, setProgress} = useProgressStore();
 	const {input_tokens, output_tokens, total_tokens} = useUsageMetaDataStore();
-	const { status: permissionStatus } = usePermissionStore();
+	const {status: permissionStatus} = usePermissionStore();
 
 	useEffect(() => {
 		setThreadId(Date.now().toString());
@@ -97,7 +97,10 @@ export const BerkeliumCLI = () => {
 				handleHelpCommands();
 				setIsLoading(false);
 			} else {
-				const response = await berkeliumPromptRouter.routePrompt(value, threadId);
+				const response = await berkeliumPromptRouter.routePrompt(
+					value,
+					threadId,
+				);
 				setIsLoading(false);
 				resetProgress();
 				if (false) {
@@ -166,26 +169,28 @@ export const BerkeliumCLI = () => {
 				</Box>
 			)}
 
-			{isRunning && !isLoading && permissionStatus !== 'awaiting_permission' && (
-				<Box
-					borderStyle="round"
-					borderColor="#e05d38"
-					paddingX={1}
-					paddingY={0}
-				>
-					<Text color="#e05d38">{'>'} </Text>
-					<TextInput
-						value={inputValue}
-						onChange={setInputValue}
-						showCursor={mode === 'input'}
-						key={inputKey}
-						placeholder="Enter your prompt"
-						onSubmit={() => {
-							handleInputChange(inputValue);
-						}}
-					/>
-				</Box>
-			)}
+			{isRunning &&
+				!isLoading &&
+				permissionStatus !== 'awaiting_permission' && (
+					<Box
+						borderStyle="round"
+						borderColor="#e05d38"
+						paddingX={1}
+						paddingY={0}
+					>
+						<Text color="#e05d38">{'>'} </Text>
+						<TextInput
+							value={inputValue}
+							onChange={setInputValue}
+							showCursor={mode === 'input'}
+							key={inputKey}
+							placeholder="Enter your prompt"
+							onSubmit={() => {
+								handleInputChange(inputValue);
+							}}
+						/>
+					</Box>
+				)}
 
 			{mode !== 'input' && permissionStatus !== 'awaiting_permission' && (
 				<Box marginTop={1}>
