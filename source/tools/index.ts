@@ -7,6 +7,7 @@ import {
 	searchFileContent,
 	replace,
 	readManyFiles,
+	webFetch,
 } from './fileSystemNew.js';
 import {runShellCommand} from './shell.js';
 import {
@@ -18,6 +19,7 @@ import {
 	replaceSchema,
 	runShellCommandSchema,
 	readManyFilesSchema,
+	webFetchSchema,
 } from './schemaNew.js';
 
 // 1. list_directory (ReadFolder) - Lists files and directories
@@ -84,6 +86,14 @@ export const readManyFilesTool = tool(readManyFiles, {
 	schema: readManyFilesSchema,
 });
 
+// 9. web_fetch - Web content fetcher
+export const webFetchTool = tool(webFetch, {
+	name: 'web_fetch',
+	description:
+		'Fetch and process content from web URLs embedded in a prompt. Extracts URLs from the prompt (up to 20) and fetches their content. Handles text-based content including HTML, JSON, XML. Returns formatted response with source attribution.',
+	schema: webFetchSchema,
+});
+
 export const tools = [
 	listDirectoryTool,
 	readFileTool,
@@ -93,4 +103,5 @@ export const tools = [
 	replaceTool,
 	runShellCommandTool,
 	readManyFilesTool,
+	webFetchTool,
 ];

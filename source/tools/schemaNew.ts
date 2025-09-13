@@ -164,6 +164,13 @@ export const readManyFilesSchema = z.object({
 		.describe('Whether to respect .gitignore patterns when finding files'),
 });
 
+// 9. Schema for web_fetch
+export const webFetchSchema = z.object({
+	prompt: z
+		.string()
+		.describe('A comprehensive prompt that includes the URL(s) (up to 20) to fetch and specific instructions on how to process their content. For example: "Summarize https://example.com/article and extract key points from https://another.com/data". The prompt must contain at least one URL starting with http:// or https://'),
+});
+
 // Legacy schema for backward compatibility
 export const runCommandSchema = z.object({
 	command: z.string().describe('The shell command to execute'),
