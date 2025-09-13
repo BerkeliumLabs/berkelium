@@ -29,5 +29,10 @@ declare global {
 		total_tokens: number;
 		setUsageMetaData: (data: IUsageMetadata) => void;
 	};
+	interface ToolResult {
+		success: boolean;
+		output: string;
+		error?: string;
+	}
 }
 export {};

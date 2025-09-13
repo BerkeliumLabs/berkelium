@@ -1,8 +1,4 @@
-import {
-	writeFile as fsWriteFile,
-	access,
-	mkdir
-} from 'fs/promises';
+import {writeFile as fsWriteFile, access, mkdir} from 'fs/promises';
 import {constants} from 'fs';
 import {resolve, dirname} from 'path';
 import useProgressStore from '../store/progress.js';
@@ -16,7 +12,6 @@ export async function writeFile(args: {
 	content: string;
 }): Promise<ToolResult> {
 	const {file_path: filePath, content} = args;
-	useProgressStore.getState().setProgress(`Writing to file: ${filePath}`);
 
 	try {
 		const resolvedPath = resolve(filePath);
@@ -24,6 +19,7 @@ export async function writeFile(args: {
 
 		// Create parent directories if they don't exist
 		await mkdir(parentDir, {recursive: true});
+		useProgressStore.getState().setProgress(`Creating directory: ${parentDir}`);
 
 		// Check if file exists to determine message
 		let fileExists = false;
@@ -32,10 +28,14 @@ export async function writeFile(args: {
 			fileExists = true;
 		} catch {
 			// File doesn't exist
+			useProgressStore
+				.getState()
+				.setProgress(`File doesn't exist: ${resolvedPath}`);
 		}
 
 		// Write the file
 		await fsWriteFile(resolvedPath, content, 'utf-8');
+		useProgressStore.getState().setProgress(`Writing file: ${resolvedPath}`);
 
 		const message = fileExists
 			? `Successfully overwrote file: ${filePath}`
@@ -48,6 +48,7 @@ export async function writeFile(args: {
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : 'Unknown error';
+		useProgressStore.getState().setProgress(errorMessage);
 		return {
 			success: false,
 			output: '',
