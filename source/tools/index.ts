@@ -8,7 +8,7 @@ import {
 	replace,
 	readManyFiles,
 	webFetch,
-} from './fileSystemNew.js';
+} from './fileSystem.js';
 import {runShellCommand} from './shell.js';
 import {
 	listDirectorySchema,
@@ -20,7 +20,7 @@ import {
 	runShellCommandSchema,
 	readManyFilesSchema,
 	webFetchSchema,
-} from './schemaNew.js';
+} from './schema.js';
 
 // 1. list_directory (ReadFolder) - Lists files and directories
 export const listDirectoryTool = tool(listDirectory, {

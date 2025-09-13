@@ -5,164 +5,102 @@ import {
 	mkdir,
 	readdir,
 	stat,
-	unlink,
 } from 'fs/promises';
 import {constants} from 'fs';
-import {resolve, dirname, join} from 'path';
+import {resolve, dirname, join, relative} from 'path';
+import {glob as globPattern} from 'glob';
+import {execSync, exec} from 'child_process';
+import {promisify} from 'util';
 import useProgressStore from '../store/progress.js';
 
-/**
- * Read the contents of a file from the local file system
- */
-export async function readFile(args: {filePath: string}): Promise<ToolResult> {
-	const {filePath} = args;
-	try {
-		// Resolve the path to handle relative paths
-		const resolvedPath = resolve(filePath);
+const execAsync = promisify(exec);
 
-		// Check if file exists and is readable
-		await access(resolvedPath, constants.F_OK | constants.R_OK);
-
-		// Read the file content
-		const content = await fsReadFile(resolvedPath, 'utf-8');
-
-		return {
-			success: true,
-			output: content,
-		};
-	} catch (error) {
-		console.error(`Error reading file ${filePath}:`, error);
-
-		const errorMessage =
-			error instanceof Error ? error.message : 'Unknown error';
-
-		return {
-			success: false,
-			output: '',
-			error: `Failed to read file ${filePath}: ${errorMessage}`,
-		};
-	}
+export interface ToolResult {
+	success: boolean;
+	output: string;
+	error?: string;
 }
 
 /**
- * Write content to a file on the local file system
+ * 1. list_directory (ReadFolder)
+ * Lists the names of files and subdirectories within a specified directory path
  */
-export async function writeFile(args: {
-	filePath: string;
-	content: string;
-	createDirectories?: boolean;
+export async function listDirectory(args: {
+	path: string;
+	ignore?: string[];
+	respect_git_ignore?: boolean;
 }): Promise<ToolResult> {
-	const {filePath, content, createDirectories} = args;
-	useProgressStore.getState().setProgress(`Writing to file: ${filePath}`);
-	try {
-		// Resolve the path to handle relative paths
-		const resolvedPath = resolve(filePath);
+	const {path: dirPath, ignore = [], respect_git_ignore = true} = args;
 
-		// Create parent directories if requested and they don't exist
-		if (createDirectories) {
-			const parentDir = dirname(resolvedPath);
+	try {
+		const resolvedPath = resolve(dirPath);
+		await access(resolvedPath, constants.F_OK | constants.R_OK);
+
+		let entries = await readdir(resolvedPath);
+
+		// Apply ignore patterns
+		if (ignore.length > 0) {
+			entries = entries.filter(entry => {
+				return !ignore.some(pattern => {
+					// Simple glob pattern matching
+					const regex = new RegExp(
+						pattern.replace(/\*/g, '.*').replace(/\?/g, '.'),
+					);
+					return regex.test(entry);
+				});
+			});
+		}
+
+		// Apply gitignore if requested
+		if (respect_git_ignore) {
+			entries = entries.filter(entry => {
+				// Basic gitignore patterns - exclude common ignored items
+				const commonIgnored = [
+					'.git',
+					'node_modules',
+					'.DS_Store',
+					'*.tmp',
+					'*.log',
+				];
+				return !commonIgnored.some(pattern => {
+					const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+					return regex.test(entry);
+				});
+			});
+		}
+
+		// Get detailed information and sort
+		const entryDetails: Array<{name: string; isDir: boolean; type: string}> =
+			[];
+
+		for (const entry of entries) {
 			try {
-				await mkdir(parentDir, {recursive: true});
-			} catch (error) {
-				// Ignore error if directory already exists
-				const errorMessage =
-					error instanceof Error ? error.message : 'Unknown error';
-				if (!errorMessage.includes('EEXIST')) {
-					throw error;
-				}
+				const entryPath = join(resolvedPath, entry);
+				const stats = await stat(entryPath);
+				entryDetails.push({
+					name: entry,
+					isDir: stats.isDirectory(),
+					type: stats.isDirectory() ? '[DIR]' : entry,
+				});
+			} catch {
+				entryDetails.push({
+					name: entry,
+					isDir: false,
+					type: entry,
+				});
 			}
 		}
 
-		// Write the file content
-		await fsWriteFile(resolvedPath, content, 'utf-8');
+		// Sort: directories first, then alphabetically
+		entryDetails.sort((a, b) => {
+			if (a.isDir && !b.isDir) return -1;
+			if (!a.isDir && b.isDir) return 1;
+			return a.name.localeCompare(b.name);
+		});
 
-		return {
-			success: true,
-			output: `Successfully wrote ${content.length} characters to ${filePath}`,
-		};
-	} catch (error) {
-		const errorMessage =
-			error instanceof Error ? error.message : 'Unknown error';
-
-		if (errorMessage.includes('ENOENT')) {
-			return {
-				success: false,
-				output: '',
-				error: `Directory not found: Cannot write to ${filePath}. Try setting createDirectories to true.`,
-			};
-		}
-
-		if (errorMessage.includes('EACCES')) {
-			return {
-				success: false,
-				output: '',
-				error: `Permission denied: Cannot write to file ${filePath}`,
-			};
-		}
-
-		return {
-			success: false,
-			output: '',
-			error: `Failed to write file ${filePath}: ${errorMessage}`,
-		};
-	}
-}
-
-/**
- * List the contents of a directory
- */
-export async function listDirectory(args: {
-	directoryPath: string;
-	showHidden?: boolean;
-}): Promise<ToolResult> {
-	const {directoryPath, showHidden = false} = args;
-	try {
-		// Resolve the path to handle relative paths
-		const resolvedPath = resolve(directoryPath);
-
-		// Check if directory exists and is readable
-		await access(resolvedPath, constants.F_OK | constants.R_OK);
-
-		// Read directory contents
-		const entries = await readdir(resolvedPath);
-
-		// Filter hidden files if not requested
-		const filteredEntries = showHidden
-			? entries
-			: entries.filter(entry => !entry.startsWith('.'));
-
-		if (filteredEntries.length === 0) {
-			return {
-				success: true,
-				output: `Directory ${directoryPath} is empty${
-					showHidden ? '' : ' (hidden files not shown)'
-				}`,
-			};
-		}
-
-		// Get detailed information for each entry
-		const entryDetails = await Promise.all(
-			filteredEntries.map(async entry => {
-				try {
-					const entryPath = join(resolvedPath, entry);
-					const stats = await stat(entryPath);
-					const type = stats.isDirectory() ? 'DIR' : 'FILE';
-					const size = stats.isFile() ? ` (${stats.size} bytes)` : '';
-					return `${type.padEnd(4)} ${entry}${size}`;
-				} catch {
-					return `?    ${entry} (unable to read details)`;
-				}
-			}),
-		);
-
-		const output = [
-			`Contents of ${directoryPath}:`,
-			`Found ${filteredEntries.length} item(s)${
-				showHidden ? ' (including hidden)' : ''
-			}`,
-			'',
-			...entryDetails,
-		].join('\n');
+		const output = `Directory listing for ${dirPath}:\n${entryDetails
+			.map(e => e.type)
+			.join('\n')}`;
 
 		return {
 			success: true,
@@ -171,116 +109,101 @@ export async function listDirectory(args: {
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : 'Unknown error';
-
-		if (errorMessage.includes('ENOENT')) {
-			return {
-				success: false,
-				output: '',
-				error: `Directory not found: ${directoryPath}`,
-			};
-		}
-
-		if (errorMessage.includes('EACCES')) {
-			return {
-				success: false,
-				output: '',
-				error: `Permission denied: Cannot read directory ${directoryPath}`,
-			};
-		}
-
-		if (errorMessage.includes('ENOTDIR')) {
-			return {
-				success: false,
-				output: '',
-				error: `Not a directory: ${directoryPath}`,
-			};
-		}
-
 		return {
 			success: false,
 			output: '',
-			error: `Failed to list directory ${directoryPath}: ${errorMessage}`,
+			error: `Failed to list directory ${dirPath}: ${errorMessage}`,
 		};
 	}
 }
 
 /**
- * Create a new directory
+ * 2. read_file (ReadFile)
+ * Reads and returns the content of a specified file
  */
-export async function createDirectory(args: {
-	directoryPath: string;
-	recursive?: boolean;
+export async function readFile(args: {
+	path: string;
+	offset?: number;
+	limit?: number;
 }): Promise<ToolResult> {
-	const {directoryPath, recursive = true} = args;
+	const {path: filePath, offset, limit} = args;
+
 	try {
-		// Resolve the path to handle relative paths
-		const resolvedPath = resolve(directoryPath);
+		const resolvedPath = resolve(filePath);
+		await access(resolvedPath, constants.F_OK | constants.R_OK);
 
-		// Create the directory
-		await mkdir(resolvedPath, {recursive});
+		const stats = await stat(resolvedPath);
 
-		return {
-			success: true,
-			output: `Successfully created directory: ${directoryPath}`,
-		};
-	} catch (error) {
-		const errorMessage =
-			error instanceof Error ? error.message : 'Unknown error';
+		// Check if it's a binary file by extension
+		const imageExtensions = [
+			'.png',
+			'.jpg',
+			'.jpeg',
+			'.gif',
+			'.webp',
+			'.svg',
+			'.bmp',
+		];
+		const pdfExtensions = ['.pdf'];
+		const extension = filePath
+			.toLowerCase()
+			.substring(filePath.lastIndexOf('.'));
 
-		if (errorMessage.includes('EEXIST')) {
+		if (imageExtensions.includes(extension)) {
+			// Handle image files - return base64 encoded
+			const content = await fsReadFile(resolvedPath);
+			const mimeType = `image/${
+				extension.slice(1) === 'jpg' ? 'jpeg' : extension.slice(1)
+			}`;
 			return {
 				success: true,
-				output: `Directory already exists: ${directoryPath}`,
+				output: JSON.stringify({
+					inlineData: {
+						mimeType,
+						data: content.toString('base64'),
+					},
+				}),
 			};
 		}
 
-		if (errorMessage.includes('EACCES')) {
+		if (pdfExtensions.includes(extension)) {
+			// Handle PDF files - return base64 encoded
+			const content = await fsReadFile(resolvedPath);
 			return {
-				success: false,
-				output: '',
-				error: `Permission denied: Cannot create directory ${directoryPath}`,
+				success: true,
+				output: JSON.stringify({
+					inlineData: {
+						mimeType: 'application/pdf',
+						data: content.toString('base64'),
+					},
+				}),
 			};
 		}
 
-		if (errorMessage.includes('ENOENT') && !recursive) {
-			return {
-				success: false,
-				output: '',
-				error: `Parent directory does not exist: ${directoryPath}. Try setting recursive to true.`,
-			};
+		// Handle text files
+		const content = await fsReadFile(resolvedPath, 'utf-8');
+		const lines = content.split('\n');
+
+		let resultContent = content;
+		let truncationMessage = '';
+
+		if (offset !== undefined && limit !== undefined) {
+			const selectedLines = lines.slice(offset, offset + limit);
+			resultContent = selectedLines.join('\n');
+			truncationMessage = `[File content truncated: showing lines ${
+				offset + 1
+			}-${Math.min(offset + limit, lines.length)} of ${
+				lines.length
+			} total lines]\n`;
+		} else if (lines.length > 2000) {
+			const selectedLines = lines.slice(0, 2000);
+			resultContent = selectedLines.join('\n');
+			truncationMessage = `[File content truncated: showing first 2000 lines of ${lines.length} total lines]\n`;
 		}
-
-		return {
-			success: false,
-			output: '',
-			error: `Failed to create directory ${directoryPath}: ${errorMessage}`,
-		};
-	}
-}
-
-/**
- * Delete a file from the file system
- */
-export async function deleteFile(args: {
-	filePath: string;
-}): Promise<ToolResult> {
-	const {filePath} = args;
-	try {
-		// Resolve the path to handle relative paths
-		const resolvedPath = resolve(filePath);
-
-		// Check if file exists
-		await access(resolvedPath, constants.F_OK);
-
-		console.warn(`\n🟡 WARNING: You are about to delete a file:`);
-		console.log(`   ${filePath}`);
-
-		// Delete the file
-		await unlink(resolvedPath);
 
 		return {
 			success: true,
-			output: `Successfully deleted file: ${filePath}`,
+			output: truncationMessage + resultContent,
 		};
 	} catch (error) {
 		const errorMessage =
@@ -294,26 +217,683 @@ export async function deleteFile(args: {
 			};
 		}
 
-		if (errorMessage.includes('EACCES')) {
+		return {
+			success: false,
+			output: '',
+			error: `Failed to read file ${filePath}: ${errorMessage}`,
+		};
+	}
+}
+
+/**
+ * 3. write_file (WriteFile)
+ * Writes content to a specified file
+ */
+export async function writeFile(args: {
+	file_path: string;
+	content: string;
+}): Promise<ToolResult> {
+	const {file_path: filePath, content} = args;
+	useProgressStore.getState().setProgress(`Writing to file: ${filePath}`);
+
+	try {
+		const resolvedPath = resolve(filePath);
+		const parentDir = dirname(resolvedPath);
+
+		// Create parent directories if they don't exist
+		await mkdir(parentDir, {recursive: true});
+
+		// Check if file exists to determine message
+		let fileExists = false;
+		try {
+			await access(resolvedPath, constants.F_OK);
+			fileExists = true;
+		} catch {
+			// File doesn't exist
+		}
+
+		// Write the file
+		await fsWriteFile(resolvedPath, content, 'utf-8');
+
+		const message = fileExists
+			? `Successfully overwrote file: ${filePath}`
+			: `Successfully created and wrote to new file: ${filePath}`;
+
+		return {
+			success: true,
+			output: message,
+		};
+	} catch (error) {
+		const errorMessage =
+			error instanceof Error ? error.message : 'Unknown error';
+		return {
+			success: false,
+			output: '',
+			error: `Failed to write file ${filePath}: ${errorMessage}`,
+		};
+	}
+}
+
+/**
+ * 4. glob (FindFiles)
+ * Finds files matching specific glob patterns
+ */
+export async function glob(args: {
+	pattern: string;
+	path?: string;
+	case_sensitive?: boolean;
+	respect_git_ignore?: boolean;
+}): Promise<ToolResult> {
+	const {
+		pattern,
+		path: searchPath = process.cwd(),
+		case_sensitive = false,
+		respect_git_ignore = true,
+	} = args;
+
+	try {
+		const resolvedPath = resolve(searchPath);
+		// const fullPattern = join(resolvedPath, pattern);
+
+		const options: any = {
+			cwd: resolvedPath,
+			absolute: true,
+			nocase: !case_sensitive,
+			ignore: respect_git_ignore
+				? ['node_modules/**', '.git/**', '*.log', '*.tmp']
+				: [],
+		};
+
+		const matches = await globPattern(pattern, options);
+
+		if (matches.length === 0) {
 			return {
-				success: false,
-				output: '',
-				error: `Permission denied: Cannot delete file ${filePath}`,
+				success: true,
+				output: `No files found matching "${pattern}" within ${searchPath}`,
 			};
 		}
 
-		if (errorMessage.includes('EISDIR')) {
+		// Sort by modification time (newest first)
+		const filesWithStats = await Promise.all(
+			matches.map(async file => {
+				try {
+					const stats = await stat(file);
+					return {file, mtime: stats.mtime};
+				} catch {
+					return {file, mtime: new Date(0)};
+				}
+			}),
+		);
+
+		filesWithStats.sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
+		const sortedFiles = filesWithStats.map(f => f.file);
+
+		const output = `Found ${
+			matches.length
+		} file(s) matching "${pattern}" within ${searchPath}, sorted by modification time (newest first):\n${sortedFiles.join(
+			'\n',
+		)}`;
+
+		return {
+			success: true,
+			output,
+		};
+	} catch (error) {
+		const errorMessage =
+			error instanceof Error ? error.message : 'Unknown error';
+		return {
+			success: false,
+			output: '',
+			error: `Failed to find files with pattern ${pattern}: ${errorMessage}`,
+		};
+	}
+}
+
+/**
+ * 5. search_file_content (SearchText)
+ * Searches for a regex pattern within file contents
+ */
+export async function searchFileContent(args: {
+	pattern: string;
+	path?: string;
+	include?: string;
+}): Promise<ToolResult> {
+	const {pattern, path: searchPath = process.cwd(), include} = args;
+
+	try {
+		const resolvedPath = resolve(searchPath);
+
+		// Try git grep first if available
+		let command = '';
+		let isGitRepo = false;
+
+		try {
+			execSync('git rev-parse --git-dir', {cwd: resolvedPath, stdio: 'ignore'});
+			isGitRepo = true;
+		} catch {
+			// Not a git repo
+		}
+
+		if (isGitRepo) {
+			command = `git grep -n "${pattern}"`;
+			if (include) {
+				command += ` -- "${include}"`;
+			}
+		} else {
+			// Fallback to regular grep or find
+			if (include) {
+				command = `find "${resolvedPath}" -name "${include}" -type f -exec grep -Hn "${pattern}" {} +`;
+			} else {
+				command = `grep -rn "${pattern}" "${resolvedPath}"`;
+			}
+		}
+
+		try {
+			const {stdout} = await execAsync(command, {cwd: resolvedPath});
+
+			if (!stdout.trim()) {
+				return {
+					success: true,
+					output: `No matches found for pattern "${pattern}" in path "${searchPath}"${
+						include ? ` (filter: "${include}")` : ''
+					}`,
+				};
+			}
+
+			// Format the output
+			const lines = stdout.trim().split('\n');
+			const groupedResults: {[file: string]: string[]} = {};
+
+			for (const line of lines) {
+				const match = line.match(/^([^:]+):(\d+):(.*)/);
+				if (match) {
+					const [, file, lineNum, content] = match;
+					if (file && lineNum && content) {
+						const relativePath = relative(resolvedPath, file);
+
+						if (!groupedResults[relativePath]) {
+							groupedResults[relativePath] = [];
+						}
+						groupedResults[relativePath].push(`L${lineNum}: ${content}`);
+					}
+				}
+			}
+
+			let output = `Found ${
+				lines.length
+			} matches for pattern "${pattern}" in path "${searchPath}"${
+				include ? ` (filter: "${include}")` : ''
+			}:\n---\n`;
+
+			for (const [file, matches] of Object.entries(groupedResults)) {
+				output += `File: ${file}\n${matches.join('\n')}\n---\n`;
+			}
+
+			return {
+				success: true,
+				output: output.trim(),
+			};
+		} catch (error) {
+			return {
+				success: true,
+				output: `No matches found for pattern "${pattern}" in path "${searchPath}"${
+					include ? ` (filter: "${include}")` : ''
+				}`,
+			};
+		}
+	} catch (error) {
+		const errorMessage =
+			error instanceof Error ? error.message : 'Unknown error';
+		return {
+			success: false,
+			output: '',
+			error: `Failed to search for pattern ${pattern}: ${errorMessage}`,
+		};
+	}
+}
+
+/**
+ * 6. replace (Edit)
+ * Replaces text within a file with enhanced reliability
+ */
+export async function replace(args: {
+	file_path: string;
+	old_string: string;
+	new_string: string;
+	expected_replacements?: number;
+}): Promise<ToolResult> {
+	const {
+		file_path: filePath,
+		old_string: oldString,
+		new_string: newString,
+		expected_replacements = 1,
+	} = args;
+
+	try {
+		const resolvedPath = resolve(filePath);
+
+		// If old_string is empty, create new file
+		if (oldString === '') {
+			try {
+				await access(resolvedPath, constants.F_OK);
+				return {
+					success: false,
+					output: '',
+					error: `Cannot create file ${filePath}: file already exists`,
+				};
+			} catch {
+				// File doesn't exist, create it
+				await mkdir(dirname(resolvedPath), {recursive: true});
+				await fsWriteFile(resolvedPath, newString, 'utf-8');
+				return {
+					success: true,
+					output: `Created new file: ${filePath} with provided content.`,
+				};
+			}
+		}
+
+		// Read existing file
+		const content = await fsReadFile(resolvedPath, 'utf-8');
+
+		// Count occurrences
+		const occurrences = (
+			content.match(new RegExp(escapeRegExp(oldString), 'g')) || []
+		).length;
+
+		if (occurrences === 0) {
 			return {
 				success: false,
 				output: '',
-				error: `Cannot delete directory with deleteFile: ${filePath}. Use a directory removal tool instead.`,
+				error: `Failed to edit, 0 occurrences found of the specified old_string in ${filePath}`,
+			};
+		}
+
+		if (occurrences !== expected_replacements) {
+			return {
+				success: false,
+				output: '',
+				error: `Failed to edit, expected ${expected_replacements} occurrences but found ${occurrences} in ${filePath}`,
+			};
+		}
+
+		// Perform replacement
+		const newContent = content.replace(
+			new RegExp(escapeRegExp(oldString), 'g'),
+			newString,
+		);
+
+		// Write back to file
+		await fsWriteFile(resolvedPath, newContent, 'utf-8');
+
+		return {
+			success: true,
+			output: `Successfully modified file: ${filePath} (${expected_replacements} replacements).`,
+		};
+	} catch (error) {
+		const errorMessage =
+			error instanceof Error ? error.message : 'Unknown error';
+
+		if (errorMessage.includes('ENOENT')) {
+			return {
+				success: false,
+				output: '',
+				error: `File not found: ${filePath}`,
 			};
 		}
 
 		return {
 			success: false,
 			output: '',
-			error: `Failed to delete file ${filePath}: ${errorMessage}`,
+			error: `Failed to edit file ${filePath}: ${errorMessage}`,
+		};
+	}
+}
+
+/**
+ * Utility function to escape regex special characters
+ */
+function escapeRegExp(string: string): string {
+	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * 7. read_many_files (Multi-File Reader)
+ * Reads content from multiple files specified by paths or glob patterns
+ */
+export async function readManyFiles(args: {
+	paths: string[];
+	exclude?: string[];
+	include?: string[];
+	recursive?: boolean;
+	useDefaultExcludes?: boolean;
+	respect_git_ignore?: boolean;
+}): Promise<ToolResult> {
+	const {
+		paths,
+		exclude = [],
+		include = [],
+		recursive = true,
+		useDefaultExcludes = true,
+		respect_git_ignore = true,
+	} = args;
+
+	try {
+		// Default exclusion patterns
+		const defaultExcludes = [
+			'node_modules/**',
+			'.git/**',
+			'*.exe',
+			'*.dll',
+			'*.so',
+			'*.dylib',
+			'*.bin',
+			'*.log',
+			'dist/**',
+			'build/**',
+			'.next/**',
+			'.nuxt/**',
+		];
+
+		// Combine all patterns
+		const allPaths = [...paths, ...include];
+		const allExcludes = useDefaultExcludes ? [...defaultExcludes, ...exclude] : exclude;
+
+		// Get all matching files
+		const allFiles: string[] = [];
+		for (const pattern of allPaths) {
+			try {
+				const globOptions: any = {
+					ignore: allExcludes,
+					dot: false,
+					absolute: true,
+				};
+
+				// Add gitignore support if requested
+				if (respect_git_ignore) {
+					globOptions.gitignore = true;
+				}
+
+				const files = await globPattern(pattern, globOptions);
+				allFiles.push(...files);
+			} catch (error) {
+				// Continue with other patterns if one fails
+				continue;
+			}
+		}
+
+		// Remove duplicates
+		const uniqueFiles = [...new Set(allFiles)];
+
+		if (uniqueFiles.length === 0) {
+			return {
+				success: true,
+				output: 'No files found matching the specified patterns.',
+			};
+		}
+
+		// Process files
+		const results: string[] = [];
+		let processedCount = 0;
+
+		for (const filePath of uniqueFiles) {
+			try {
+				const fileStats = await stat(filePath);
+				if (!fileStats.isFile()) {
+					continue;
+				}
+
+				// Check if it's a media file (images, PDFs, audio, video)
+				const ext = filePath.toLowerCase().split('.').pop() || '';
+				const mediaExtensions = [
+					'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico',
+					'pdf',
+					'mp3', 'wav', 'flac', 'aac', 'm4a',
+					'mp4', 'mov', 'avi', 'mkv', 'webm'
+				];
+
+				if (mediaExtensions.includes(ext)) {
+					// Handle media files as base64
+					const buffer = await fsReadFile(filePath);
+					const base64Content = buffer.toString('base64');
+					const relativePath = relative(process.cwd(), filePath);
+
+					results.push(`--- ${relativePath} ---`);
+					results.push(`[Base64 ${ext.toUpperCase()} file: ${buffer.length} bytes]`);
+					results.push(base64Content);
+				} else {
+					// Handle as text file, but check for binary content
+					const buffer = await fsReadFile(filePath);
+
+					// Check for null bytes in first 1024 bytes to detect binary files
+					const sample = buffer.slice(0, 1024);
+					const hasNullBytes = sample.includes(0);
+
+					if (hasNullBytes) {
+						// Skip binary files that aren't explicitly supported
+						continue;
+					}
+
+					// Read as text
+					const content = buffer.toString('utf-8');
+					const relativePath = relative(process.cwd(), filePath);
+
+					results.push(`--- ${relativePath} ---`);
+					results.push(content);
+				}
+
+				processedCount++;
+			} catch (error) {
+				// Skip files that can't be read
+				continue;
+			}
+		}
+
+		results.push('--- End of content ---');
+
+		const output = results.join('\n');
+
+		return {
+			success: true,
+			output: `Read ${processedCount} files:\n\n${output}`,
+		};
+
+	} catch (error) {
+		const errorMessage =
+			error instanceof Error ? error.message : 'Unknown error';
+		return {
+			success: false,
+			output: '',
+			error: `Failed to read files: ${errorMessage}`,
+		};
+	}
+}
+
+/**
+ * 9. web_fetch (Web Content Fetcher)
+ * Fetches and processes content from web URLs embedded in a prompt
+ */
+export async function webFetch(args: {
+	prompt: string;
+}): Promise<ToolResult> {
+	const {prompt} = args;
+
+	try {
+		// Extract URLs from the prompt (up to 20)
+		const urlRegex = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
+		const urls = prompt.match(urlRegex) || [];
+
+		if (urls.length === 0) {
+			return {
+				success: false,
+				output: '',
+				error: 'No URLs found in the prompt. Please include at least one URL starting with http:// or https://',
+			};
+		}
+
+		if (urls.length > 20) {
+			return {
+				success: false,
+				output: '',
+				error: 'Too many URLs detected. Maximum of 20 URLs is allowed.',
+			};
+		}
+
+		// Remove duplicates
+		const uniqueUrls = [...new Set(urls)];
+
+		// Note: User confirmation would typically be handled by the CLI interface
+		// For now, we proceed with fetching as the tool is designed to be autonomous
+
+		// Fetch content from each URL
+		const fetchPromises = uniqueUrls.map(async (url) => {
+			try {
+				// Create AbortController for timeout
+				const controller = new AbortController();
+				const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+				// Use native fetch for web content
+				const response = await fetch(url, {
+					method: 'GET',
+					headers: {
+						'User-Agent': 'Berkelium-WebFetch/1.0 (Web Content Analysis Tool)',
+						'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.1',
+						'Accept-Language': 'en-US,en;q=0.9',
+						'Accept-Encoding': 'gzip, deflate',
+						'Connection': 'keep-alive',
+					},
+					redirect: 'follow',
+					signal: controller.signal,
+				});
+
+				clearTimeout(timeoutId);
+
+				if (!response.ok) {
+					return {
+						url,
+						success: false,
+						content: `Failed to fetch: HTTP ${response.status} ${response.statusText}`,
+					};
+				}
+
+				const contentType = response.headers.get('content-type') || '';
+
+				// Only process text-based content
+				if (!contentType.includes('text/') &&
+					!contentType.includes('application/json') &&
+					!contentType.includes('application/xml') &&
+					!contentType.includes('application/xhtml')) {
+					return {
+						url,
+						success: false,
+						content: `Unsupported content type: ${contentType}. Only text-based content is supported.`,
+					};
+				}
+
+				const content = await response.text();
+
+				// Enhanced HTML cleaning for better readability
+				let cleanContent = content;
+				if (contentType.includes('text/html')) {
+					// Remove script, style, and other non-content tags
+					cleanContent = cleanContent.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+					cleanContent = cleanContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+					cleanContent = cleanContent.replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '');
+					cleanContent = cleanContent.replace(/<!--[\s\S]*?-->/gi, '');
+
+					// Convert common structural elements to readable format
+					cleanContent = cleanContent.replace(/<h([1-6])[^>]*>(.*?)<\/h[1-6]>/gi, '\n\n## $2\n\n');
+					cleanContent = cleanContent.replace(/<p[^>]*>/gi, '\n\n');
+					cleanContent = cleanContent.replace(/<\/p>/gi, '');
+					cleanContent = cleanContent.replace(/<br[^>]*>/gi, '\n');
+					cleanContent = cleanContent.replace(/<li[^>]*>/gi, '• ');
+					cleanContent = cleanContent.replace(/<\/li>/gi, '\n');
+
+					// Remove remaining HTML tags
+					cleanContent = cleanContent.replace(/<[^>]*>/g, ' ');
+
+					// Clean up whitespace and decode HTML entities
+					cleanContent = cleanContent
+						.replace(/&nbsp;/g, ' ')
+						.replace(/&amp;/g, '&')
+						.replace(/&lt;/g, '<')
+						.replace(/&gt;/g, '>')
+						.replace(/&quot;/g, '"')
+						.replace(/&#39;/g, "'")
+						.replace(/\s+/g, ' ')
+						.replace(/\n\s+/g, '\n')
+						.trim();
+				}
+
+				return {
+					url,
+					success: true,
+					content: cleanContent,
+					contentType,
+				};
+
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+				return {
+					url,
+					success: false,
+					content: `Failed to fetch: ${errorMessage}`,
+				};
+			}
+		});
+
+		// Wait for all fetches to complete
+		const results = await Promise.all(fetchPromises);
+
+		// Format the response
+		const successfulFetches = results.filter(r => r.success);
+		const failedFetches = results.filter(r => !r.success);
+
+		if (successfulFetches.length === 0) {
+			return {
+				success: false,
+				output: '',
+				error: `Failed to fetch content from any of the ${uniqueUrls.length} URL(s). Errors:\n${
+					failedFetches.map(f => `- ${f.url}: ${f.content}`).join('\n')
+				}`,
+			};
+		}
+
+		// Build the output
+		let output = `Successfully fetched content from ${successfulFetches.length} of ${uniqueUrls.length} URL(s):\n\n`;
+
+		// Add the original prompt context
+		output += `Original Request: ${prompt}\n\n`;
+
+		// Add content from each successful fetch
+		for (const result of successfulFetches) {
+			output += `--- Content from ${result.url} ---\n`;
+			if (result.contentType) {
+				output += `Content-Type: ${result.contentType}\n`;
+			}
+			output += `${result.content}\n\n`;
+		}
+
+		// Add any fetch failures as warnings
+		if (failedFetches.length > 0) {
+			output += `--- Fetch Warnings ---\n`;
+			for (const failed of failedFetches) {
+				output += `Could not fetch ${failed.url}: ${failed.content}\n`;
+			}
+		}
+
+		output += '--- End of fetched content ---';
+
+		return {
+			success: true,
+			output,
+		};
+
+	} catch (error) {
+		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+		return {
+			success: false,
+			output: '',
+			error: `Web fetch failed: ${errorMessage}`,
 		};
 	}
 }
