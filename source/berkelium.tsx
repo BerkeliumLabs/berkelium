@@ -8,8 +8,6 @@ import {handleHelpCommands} from './utils/help-commands.js';
 import {BerkeliumRouter} from './core/router.js';
 import Spinner from 'ink-spinner';
 import useProgressStore from './store/progress.js';
-import {BERKELIUM_PERSONAS} from './const/personas.js';
-import {usePersonaStore} from './store/context.js';
 import { useUsageMetaDataStore } from './store/usage.js';
 const berkeliumPromptRouter = new BerkeliumRouter();
 
@@ -25,7 +23,6 @@ export const BerkeliumCLI = () => {
 	const [isRunning, setIsRunning] = useState(true);
 	const [isLoading, setIsLoading] = useState(false);
 	const {progress, resetProgress, setProgress} = useProgressStore();
-	const {persona} = usePersonaStore();
 	const {input_tokens, output_tokens, total_tokens} = useUsageMetaDataStore();
 
 	useEffect(() => {
@@ -72,13 +69,11 @@ export const BerkeliumCLI = () => {
 			setFilteredItems(
 				files.filter(item => item.label.toLowerCase().includes(search)),
 			);
-		} else if (mode === 'roles') {
-			const search = searchInput.toLowerCase();
+		} else if (mode === 'commands') {
+			/* const search = searchInput.toLowerCase();
 			setFilteredItems(
-				BERKELIUM_PERSONAS.filter(item =>
-					item.label.toLowerCase().includes(search),
-				),
-			);
+
+			); */
 		}
 	};
 
@@ -102,10 +97,8 @@ export const BerkeliumCLI = () => {
 				const response = await berkeliumPromptRouter.routePrompt(value, threadId);
 				setIsLoading(false);
 				resetProgress();
-				if (persona) {
-					console.log(
-						`🟢 ${chalk.bgBlue(persona)} ${response}\n`,
-					);
+				if (false) {
+					//
 				} else {
 					console.log(`🟢 ${response}\n`);
 				}
