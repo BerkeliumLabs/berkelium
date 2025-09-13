@@ -18,10 +18,6 @@ declare global {
 		context: string;
 		setContext: (context: string) => void;
 	};
-	type PersonaStore = {
-		persona: string;
-		setPersona: (persona: string) => void;
-	};
 	interface IUsageMetadata {
 		input_tokens: number;
 		output_tokens: number;
@@ -33,5 +29,10 @@ declare global {
 		total_tokens: number;
 		setUsageMetaData: (data: IUsageMetadata) => void;
 	};
+	interface ToolResult {
+		success: boolean;
+		output: string;
+		error?: string;
+	}
 }
 export {};

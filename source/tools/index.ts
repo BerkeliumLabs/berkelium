@@ -1,67 +1,116 @@
-import { tool } from "@langchain/core/tools";
-import { readFile, writeFile, listDirectory, createDirectory, deleteFile } from "./fileSystem.js";
-import { 
-  readFileSchema, 
-  writeFileSchema, 
-  listDirectorySchema, 
-  createDirectorySchema, 
-  deleteFileSchema
-} from "./schema.js";
+import {tool} from '@langchain/core/tools';
+import {listDirectory} from './ls.js';
+import {webFetch} from './webFetch.js';
+import {runShellCommand} from './shell.js';
+import {
+	listDirectorySchema,
+	readFileSchema,
+	writeFileSchema,
+	globSchema,
+	searchFileContentSchema,
+	replaceSchema,
+	runShellCommandSchema,
+	readManyFilesSchema,
+	webFetchSchema,
+	webSearchSchema,
+} from './schema.js';
+import { readFile } from './readFile.js';
+import { writeFile } from './writeFile.js';
+import { glob } from './glob.js';
+import { searchFileContent } from './grep.js';
+import { replace } from './replace.js';
+import { readManyFiles } from './multiFileReader.js';
+import { webSearch } from './webSearch.js';
 
-// @ts-ignore
-export const readFileTool = tool(
-  readFile,
-  {
-    name: "readFile",
-    description: "Read the contents of a file from the local file system. Use this when the user asks to see file contents or analyze existing code.",
-    schema: readFileSchema
-  }
-);
+// 1. list_directory (ReadFolder) - Lists files and directories
+export const listDirectoryTool = tool(listDirectory, {
+	name: 'list_directory',
+	description:
+		'List the names of files and subdirectories within a specified directory path. Can optionally ignore entries matching provided glob patterns.',
+	schema: listDirectorySchema,
+});
 
-// @ts-ignore
-export const writeFileTool = tool(
-  writeFile,
-  {
-    name: "writeFile",
-    description: "Write content to a file on the local file system. Use this when the user asks to create a new file, modify an existing file, or save content to a specific location.",
-    schema: writeFileSchema
-  }
-);
+// 2. read_file (ReadFile) - Reads file content with support for images/PDFs
+export const readFileTool = tool(readFile, {
+	name: 'read_file',
+	description:
+		'Read and return the content of a specified file. Handles text, images (PNG, JPG, GIF, WEBP, SVG, BMP), and PDF files. For text files, can read specific line ranges.',
+	schema: readFileSchema,
+});
 
-// @ts-ignore
-export const listDirectoryTool = tool(
-  listDirectory,
-  {
-    name: "listDirectory",
-    description: "List the contents of a directory. Use this when the user asks to see what files and folders are in a directory.",
-    schema: listDirectorySchema
-  }
-);
+// 3. write_file (WriteFile) - Writes content to files
+export const writeFileTool = tool(writeFile, {
+	name: 'write_file',
+	description:
+		"Write content to a specified file. If the file exists, it will be overwritten. If the file doesn't exist, it and any necessary parent directories will be created.",
+	schema: writeFileSchema,
+});
 
-// @ts-ignore
-export const createDirectoryTool = tool(
-  createDirectory,
-  {
-    name: "createDirectory",
-    description: "Create a new directory on the local file system. Use this when the user asks to create a folder or directory structure.",
-    schema: createDirectorySchema
-  }
-);
+// 4. glob (FindFiles) - Finds files matching patterns
+export const globTool = tool(glob, {
+	name: 'glob',
+	description:
+		'Find files matching specific glob patterns (e.g., src/**/*.ts, *.md), returning absolute paths sorted by modification time (newest first).',
+	schema: globSchema,
+});
 
-// @ts-ignore
-export const deleteFileTool = tool(
-  deleteFile,
-  {
-    name: "deleteFile",
-    description: "Delete a file from the local file system. Use this when the user asks to remove or delete a file. This will prompt for user confirmation.",
-    schema: deleteFileSchema
-  }
-);
+// 5. search_file_content (SearchText) - Searches within file contents
+export const searchFileContentTool = tool(searchFileContent, {
+	name: 'search_file_content',
+	description:
+		'Search for a regular expression pattern within the content of files in a specified directory. Can filter files by a glob pattern. Returns the lines containing matches.',
+	schema: searchFileContentSchema,
+});
+
+// 6. replace (Edit) - Replaces text within files
+export const replaceTool = tool(replace, {
+	name: 'replace',
+	description:
+		'Replace text within a file. By default, replaces a single occurrence, but can replace multiple occurrences. Designed for precise, targeted changes requiring significant context.',
+	schema: replaceSchema,
+});
+
+// 7. run_shell_command - Executes shell commands
+export const runShellCommandTool = tool(runShellCommand, {
+	name: 'run_shell_command',
+	description:
+		'Execute a shell command on the local system. Returns detailed information about the execution including command, directory, stdout, stderr, error, exit code, signal, and background PIDs. On Windows, commands are executed with cmd.exe /c. On other platforms, commands are executed with bash -c.',
+	schema: runShellCommandSchema,
+});
+
+// 8. read_many_files - Multi-file reader
+export const readManyFilesTool = tool(readManyFiles, {
+	name: 'read_many_files',
+	description:
+		'Read content from multiple files specified by paths or glob patterns. Concatenates text files with separators and handles binary files (images, PDFs, audio, video) as base64. Supports include/exclude patterns and default exclusions.',
+	schema: readManyFilesSchema,
+});
+
+// 9. web_fetch - Web content fetcher
+export const webFetchTool = tool(webFetch, {
+	name: 'web_fetch',
+	description:
+		'Fetch and process content from web URLs embedded in a prompt. Extracts URLs from the prompt (up to 20) and fetches their content. Handles text-based content including HTML, JSON, XML. Returns formatted response with source attribution.',
+	schema: webFetchSchema,
+});
+
+// 10. web_search - Web searcher
+export const webSearchTool = tool(webSearch, {
+	name: 'web_search',
+	description:
+		'Performs a web search using DuckDuckGo and returns the results.',
+	schema: webSearchSchema,
+});
 
 export const tools = [
-  readFileTool,
-  writeFileTool,
-  listDirectoryTool,
-  createDirectoryTool,
-  deleteFileTool
+	listDirectoryTool,
+	readFileTool,
+	writeFileTool,
+	globTool,
+	searchFileContentTool,
+	replaceTool,
+	runShellCommandTool,
+	readManyFilesTool,
+	webFetchTool,
+	webSearchTool,
 ];

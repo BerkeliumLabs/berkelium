@@ -1,50 +1,140 @@
 // Tool Executions
-import { StructuredToolCallInput } from '@langchain/core/tools';
-import { readFileTool, writeFileTool, listDirectoryTool, createDirectoryTool, deleteFileTool } from './index.js';
+import {StructuredToolCallInput} from '@langchain/core/tools';
+import {ToolCall} from '@langchain/core/messages/tool';
+import {
+	listDirectoryTool,
+	readFileTool,
+	writeFileTool,
+	globTool,
+	searchFileContentTool,
+	replaceTool,
+	runShellCommandTool,
+	readManyFilesTool,
+	webFetchTool,
+	webSearchTool,
+} from './index.js';
+import usePermissionStore, {PermissionChoice} from '../store/permission.js';
 /* import { webSearch } from './webSearch.js'; */
 
 /**
  * Registry of available tools
  */
 export const availableTools = {
-  readFile: readFileTool,
-  writeFile: writeFileTool,
-  listDirectory: listDirectoryTool,
-  createDirectory: createDirectoryTool,
-  deleteFile: deleteFileTool
+	list_directory: listDirectoryTool,
+	read_file: readFileTool,
+	write_file: writeFileTool,
+	glob: globTool,
+	search_file_content: searchFileContentTool,
+	replace: replaceTool,
+	run_shell_command: runShellCommandTool,
+	read_many_files: readManyFilesTool,
+	web_fetch: webFetchTool,
+	web_search: webSearchTool,
 };
 
 /**
- * Execute a tool by name with given arguments
+ * Request permission for tool execution from the user
  */
-export async function executeTool(
-  toolName: string,
-  args: StructuredToolCallInput
-): Promise<any> {
-  switch (toolName) {
-    case 'readFile':
-      return await readFileTool.invoke(args);
-    
-    case 'writeFile':
-      return await writeFileTool.invoke(args);
-    
-    case 'listDirectory':
-      return await listDirectoryTool.invoke(args);
-    
-    case 'createDirectory':
-      return await createDirectoryTool.invoke(args);
-    
-    case 'deleteFile':
-      return await deleteFileTool.invoke(args);
+async function requestPermission(
+	toolCall: ToolCall,
+): Promise<PermissionChoice> {
+	const store = usePermissionStore.getState();
 
-    /* case 'webSearch':
-      return webSearch(args.query, args.maxResults); */
-    
-    default:
-      return {
-        success: false,
-        output: '',
-        error: `Unknown tool: ${toolName}`
-      };
-  }
+	// Check if permission was already granted for this session
+	if (store.hasSessionPermission(toolCall.name)) {
+		return 'allow_session';
+	}
+
+	return new Promise((resolve, reject) => {
+		store.setToolCall(toolCall);
+		store.setStatus('awaiting_permission');
+		store.setPermissionPromise({resolve, reject});
+	});
+}
+
+/**
+ * Execute the actual tool after permission is granted
+ */
+async function executeToolInternal(
+	toolName: string,
+	args: StructuredToolCallInput,
+): Promise<any> {
+	switch (toolName) {
+		case 'list_directory':
+			return await listDirectoryTool.invoke(args);
+
+		case 'read_file':
+			return await readFileTool.invoke(args);
+
+		case 'write_file':
+			return await writeFileTool.invoke(args);
+
+		case 'glob':
+			return await globTool.invoke(args);
+
+		case 'search_file_content':
+			return await searchFileContentTool.invoke(args);
+
+		case 'replace':
+			return await replaceTool.invoke(args);
+
+		case 'run_shell_command':
+			return await runShellCommandTool.invoke(args);
+
+		case 'read_many_files':
+			return await readManyFilesTool.invoke(args);
+
+		case 'web_fetch':
+			return await webFetchTool.invoke(args);
+
+		case 'web_search':
+			return await webSearchTool.invoke(args);
+
+		default:
+			return {
+				success: false,
+				output: '',
+				error: `Unknown tool: ${toolName}`,
+			};
+	}
+}
+
+/**
+ * Execute a tool with user permission
+ */
+export async function executeTool(toolCall: ToolCall): Promise<any> {
+	const store = usePermissionStore.getState();
+
+	try {
+		// Request permission for this tool execution
+		const permission = await requestPermission(toolCall);
+
+		if (permission === 'deny') {
+			store.resetPermissionState();
+			return {
+				success: false,
+				output: '',
+				error: `User denied permission to execute ${toolCall.name}`,
+			};
+		}
+
+		// If permission granted for session, store it
+		if (permission === 'allow_session') {
+			store.addSessionPermission(toolCall.name);
+		}
+
+		// Set status to executing
+		store.setStatus('executing');
+
+		// Execute the tool
+		const result = await executeToolInternal(toolCall.name, toolCall.args);
+
+		// Reset permission state after execution
+		store.resetPermissionState();
+
+		return result;
+	} catch (error) {
+		store.resetPermissionState();
+		throw error;
+	}
 }

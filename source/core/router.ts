@@ -1,10 +1,6 @@
-
-
-
-import {usePersonaStore} from '../store/context.js';
 import {BerkeliumAgent} from './agent.js';
 import {BerkeliumContextManager} from './context-manager.js';
-import { BERKELIUM_PERSONAS } from '../const/personas.js';
+import {executeTool} from '../tools/executor.js';
 
 export class BerkeliumRouter {
 	private contextManager: BerkeliumContextManager;
@@ -16,22 +12,57 @@ export class BerkeliumRouter {
 
 	async routePrompt(prompt: string, threadId: string): Promise<string> {
 		if (prompt.startsWith('@') && prompt.length > 1) {
-			const firstWord = prompt.split(' ')[0];
-			const foundPersona = firstWord ? firstWord.substring(1) : '';
-			const matchedPersona = BERKELIUM_PERSONAS.find(
-				p => p.value === foundPersona,
-			);
-			if (!matchedPersona) {
-				console.error(`🔴 Unknown persona: ${foundPersona}`);
-				return `Unknown persona: ${foundPersona}`;
-			}
-			usePersonaStore.getState().setPersona(foundPersona);
-			this.contextManager.initializeContext();
-			return matchedPersona.greet;
+			return '';
 		} else {
 			this.contextManager.initializeContext();
 			const context = this.contextManager.context;
-			return this.berkeliumAgent.generateResponse(prompt, context, threadId);
+
+			// Main agent loop - continues until we get a final answer
+			let result = await this.berkeliumAgent.generateResponse(
+				prompt,
+				context,
+				threadId,
+			);
+
+			while (!result.finished) {
+				if (result.toolCalls && result.toolCalls.length > 0) {
+					// Execute tools with user permission
+					const toolResults = [];
+					for (const toolCall of result.toolCalls) {
+						try {
+							const executionResult = await executeTool(toolCall);
+							toolResults.push({
+								tool_call_id: toolCall.id ?? '',
+								result: JSON.stringify(executionResult),
+							});
+						} catch (error) {
+							const errorMessage =
+								error instanceof Error ? error.message : 'Unknown error';
+							toolResults.push({
+								tool_call_id: toolCall.id ?? '',
+								result: JSON.stringify({
+									success: false,
+									error: errorMessage,
+								}),
+							});
+						}
+					}
+
+					// Process tool results and continue the conversation
+					result = await this.berkeliumAgent.processToolResults(
+						toolResults,
+						threadId,
+					);
+				} else {
+					break;
+				}
+			}
+
+			if (result.error) {
+				return result.error;
+			}
+
+			return result.answer || 'No response generated.';
 		}
 	}
 }

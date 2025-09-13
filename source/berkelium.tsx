@@ -8,9 +8,9 @@ import {handleHelpCommands} from './utils/help-commands.js';
 import {BerkeliumRouter} from './core/router.js';
 import Spinner from 'ink-spinner';
 import useProgressStore from './store/progress.js';
-import {BERKELIUM_PERSONAS} from './const/personas.js';
-import {usePersonaStore} from './store/context.js';
-import { useUsageMetaDataStore } from './store/usage.js';
+import {useUsageMetaDataStore} from './store/usage.js';
+import usePermissionStore from './store/permission.js';
+import PermissionPrompt from './components/PermissionPrompt.js';
 const berkeliumPromptRouter = new BerkeliumRouter();
 
 export const BerkeliumCLI = () => {
@@ -25,8 +25,8 @@ export const BerkeliumCLI = () => {
 	const [isRunning, setIsRunning] = useState(true);
 	const [isLoading, setIsLoading] = useState(false);
 	const {progress, resetProgress, setProgress} = useProgressStore();
-	const {persona} = usePersonaStore();
 	const {input_tokens, output_tokens, total_tokens} = useUsageMetaDataStore();
+	const {status: permissionStatus} = usePermissionStore();
 
 	useEffect(() => {
 		setThreadId(Date.now().toString());
@@ -72,13 +72,11 @@ export const BerkeliumCLI = () => {
 			setFilteredItems(
 				files.filter(item => item.label.toLowerCase().includes(search)),
 			);
-		} else if (mode === 'roles') {
-			const search = searchInput.toLowerCase();
+		} else if (mode === 'commands') {
+			/* const search = searchInput.toLowerCase();
 			setFilteredItems(
-				BERKELIUM_PERSONAS.filter(item =>
-					item.label.toLowerCase().includes(search),
-				),
-			);
+
+			); */
 		}
 	};
 
@@ -99,13 +97,14 @@ export const BerkeliumCLI = () => {
 				handleHelpCommands();
 				setIsLoading(false);
 			} else {
-				const response = await berkeliumPromptRouter.routePrompt(value, threadId);
+				const response = await berkeliumPromptRouter.routePrompt(
+					value,
+					threadId,
+				);
 				setIsLoading(false);
 				resetProgress();
-				if (persona) {
-					console.log(
-						`🟢 ${chalk.bgBlue(persona)} ${response}\n`,
-					);
+				if (false) {
+					//
 				} else {
 					console.log(`🟢 ${response}\n`);
 				}
@@ -147,6 +146,9 @@ export const BerkeliumCLI = () => {
 
 	return (
 		<Box flexDirection="column">
+			{/* Permission prompt - highest priority */}
+			{permissionStatus === 'awaiting_permission' && <PermissionPrompt />}
+
 			{/* Loading indicator */}
 			{isLoading && (
 				<Text>
@@ -157,28 +159,40 @@ export const BerkeliumCLI = () => {
 				</Text>
 			)}
 
-			{isRunning && !isLoading && (
-				<Box
-					borderStyle="round"
-					borderColor="#e05d38"
-					paddingX={1}
-					paddingY={0}
-				>
-					<Text color="#e05d38">{'>'} </Text>
-					<TextInput
-						value={inputValue}
-						onChange={setInputValue}
-						showCursor={mode === 'input'}
-						key={inputKey}
-						placeholder="Enter your prompt"
-						onSubmit={() => {
-							handleInputChange(inputValue);
-						}}
-					/>
+			{/* Tool execution status */}
+			{permissionStatus === 'executing' && (
+				<Box marginBottom={1}>
+					<Text color="blue">
+						<Spinner type="dots" />
+						{' Executing tool...'}
+					</Text>
 				</Box>
 			)}
 
-			{mode !== 'input' && (
+			{isRunning &&
+				!isLoading &&
+				permissionStatus !== 'awaiting_permission' && (
+					<Box
+						borderStyle="round"
+						borderColor="#e05d38"
+						paddingX={1}
+						paddingY={0}
+					>
+						<Text color="#e05d38">{'>'} </Text>
+						<TextInput
+							value={inputValue}
+							onChange={setInputValue}
+							showCursor={mode === 'input'}
+							key={inputKey}
+							placeholder="Enter your prompt"
+							onSubmit={() => {
+								handleInputChange(inputValue);
+							}}
+						/>
+					</Box>
+				)}
+
+			{mode !== 'input' && permissionStatus !== 'awaiting_permission' && (
 				<Box marginTop={1}>
 					<SelectInput items={filteredItems} onSelect={handleSelectChange} />
 				</Box>

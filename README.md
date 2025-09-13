@@ -10,22 +10,22 @@ Think of Berkelium as a smart companion that understands your code and helps you
 
 ## Key Features
 
-  - **Conversational AI**: Chat with Berkelium in natural language and get intelligent responses.
-  - **Code Generation**: Ask Berkelium to write code snippets, functions, or even entire files.
-  - **File System Interaction**: Berkelium can read, write, and search for files in your project.
+- **Conversational AI**: Chat with Berkelium in natural language and get intelligent responses.
+- **Code Generation**: Ask Berkelium to write code snippets, functions, or even entire files.
+- **File System Interaction**: Berkelium can read, write, and search for files in your project.
 
------
+---
 
 ## Understanding Berkelium's Output
 
 Berkelium uses a color-coding system to help you quickly identify different types of messages in your terminal.
 
-  - 🔵 **User Prompt**: This indicates a prompt or question you've entered.
-  - 🟢 **Success**: This signifies a successful AI response or the completion of a task.
-  - 🟡 **Warning**: This alerts you to a potential issue or non-critical problem.
-  - 🔴 **Error**: This highlights a critical error that requires your attention.
+- 🔵 **User Prompt**: This indicates a prompt or question you've entered.
+- 🟢 **Success**: This signifies a successful AI response or the completion of a task.
+- 🟡 **Warning**: This alerts you to a potential issue or non-critical problem.
+- 🔴 **Error**: This highlights a critical error that requires your attention.
 
------
+---
 
 ## Getting Started
 

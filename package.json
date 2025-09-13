@@ -28,6 +28,7 @@
 		"@langchain/langgraph": "^0.4.0",
 		"@langchain/mcp-adapters": "^0.6.0",
 		"figlet": "^1.8.2",
+		"glob": "^11.0.3",
 		"gradient-string": "^3.0.0",
 		"ink": "^6.1.0",
 		"ink-link": "^4.1.0",
@@ -70,7 +71,8 @@
 		"extends": "xo-react",
 		"prettier": true,
 		"rules": {
-			"react/prop-types": "off"
+			"react/prop-types": "off",
+			"unicorn/expiring-todo-comments": "off"
 		}
 	},
 	"prettier": "@vdemedes/prettier-config",

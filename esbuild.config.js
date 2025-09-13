@@ -5,14 +5,17 @@ const stubOptionalDependenciesPlugin = {
 	name: 'stub-optional-dependencies',
 	setup(build) {
 		// Stub optional dependencies
-		build.onResolve({ filter: /^(react-devtools-core|@babel\/code-frame|resolve\.exports)$/ }, (args) => {
-			return {
-				path: args.path,
-				namespace: 'optional-dep-stub',
-			};
-		});
-		
-		build.onLoad({ filter: /.*/, namespace: 'optional-dep-stub' }, (args) => {
+		build.onResolve(
+			{filter: /^(react-devtools-core|@babel\/code-frame|resolve\.exports)$/},
+			args => {
+				return {
+					path: args.path,
+					namespace: 'optional-dep-stub',
+				};
+			},
+		);
+
+		build.onLoad({filter: /.*/, namespace: 'optional-dep-stub'}, args => {
 			return {
 				contents: 'export default {}; export const __esModule = true;',
 				loader: 'js',
@@ -31,8 +34,23 @@ const config = {
 	packages: 'external', // Keep all node_modules as external
 	external: [
 		// Node.js built-in modules
-		'assert', 'buffer', 'child_process', 'crypto', 'events', 'fs', 'http', 'https', 
-		'net', 'os', 'path', 'stream', 'url', 'util', 'zlib', 'process', 'tty',
+		'assert',
+		'buffer',
+		'child_process',
+		'crypto',
+		'events',
+		'fs',
+		'http',
+		'https',
+		'net',
+		'os',
+		'path',
+		'stream',
+		'url',
+		'util',
+		'zlib',
+		'process',
+		'tty',
 	],
 	plugins: [stubOptionalDependenciesPlugin],
 	banner: {
