@@ -1,7 +1,7 @@
 import {exec, spawn} from 'node:child_process';
 import {promisify} from 'node:util';
 import {resolve} from 'node:path';
-import {ConfigManager} from '../utils/config.js';
+import useProgressStore from '../store/progress.js';
 
 const execAsync = promisify(exec);
 
@@ -78,6 +78,7 @@ export async function runShellCommand(args: {
 	'Background PIDs': number[];
 }> {
 	const {command, description, directory} = args;
+	useProgressStore.getState().setProgress(`Executing command: ${command}`);
 
 	// Check command restrictions from configuration
 	const restrictionCheck = isCommandAllowed(command);
@@ -135,6 +136,7 @@ export async function runShellCommand(args: {
 			});
 
 			child.unref();
+			useProgressStore.getState().setProgress(`Started background process with PID: ${child.pid}`);
 
 			resolve({
 				Command: command,
@@ -158,6 +160,7 @@ export async function runShellCommand(args: {
 			};
 
 			const {stdout, stderr} = await execAsync(command, options);
+			useProgressStore.getState().setProgress(`Command execution finished`);
 
 			return {
 				Command: command,
@@ -179,6 +182,7 @@ export async function runShellCommand(args: {
 			} else if (error.message) {
 				errorMessage = error.message;
 			}
+			useProgressStore.getState().setProgress(errorMessage);
 
 			return {
 				Command: command,

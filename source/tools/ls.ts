@@ -5,6 +5,7 @@ import {
 } from 'fs/promises';
 import {constants} from 'fs';
 import {resolve, join} from 'path';
+import useProgressStore from '../store/progress.js';
 
 /**
  * list_directory (ReadFolder)
@@ -19,12 +20,14 @@ export async function listDirectory(args: {
 
 	try {
 		const resolvedPath = resolve(dirPath);
+		useProgressStore.getState().setProgress(`Listing directory: ${resolvedPath}`);
 		await access(resolvedPath, constants.F_OK | constants.R_OK);
 
 		let entries = await readdir(resolvedPath);
 
 		// Apply ignore patterns
 		if (ignore.length > 0) {
+			useProgressStore.getState().setProgress(`Applying ignore patterns`);
 			entries = entries.filter(entry => {
 				return !ignore.some(pattern => {
 					// Simple glob pattern matching
@@ -38,6 +41,7 @@ export async function listDirectory(args: {
 
 		// Apply gitignore if requested
 		if (respect_git_ignore) {
+			useProgressStore.getState().setProgress(`Applying gitignore`);
 			entries = entries.filter(entry => {
 				// Basic gitignore patterns - exclude common ignored items
 				const commonIgnored = [
@@ -58,6 +62,7 @@ export async function listDirectory(args: {
 		const entryDetails: Array<{name: string; isDir: boolean; type: string}> =
 			[];
 
+		useProgressStore.getState().setProgress(`Getting entry details`);
 		for (const entry of entries) {
 			try {
 				const entryPath = join(resolvedPath, entry);
@@ -77,6 +82,7 @@ export async function listDirectory(args: {
 		}
 
 		// Sort: directories first, then alphabetically
+		useProgressStore.getState().setProgress(`Sorting entries`);
 		entryDetails.sort((a, b) => {
 			if (a.isDir && !b.isDir) return -1;
 			if (!a.isDir && b.isDir) return 1;
@@ -94,6 +100,7 @@ export async function listDirectory(args: {
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : 'Unknown error';
+		useProgressStore.getState().setProgress(errorMessage);
 		return {
 			success: false,
 			output: '',
@@ -101,3 +108,4 @@ export async function listDirectory(args: {
 		};
 	}
 }
+

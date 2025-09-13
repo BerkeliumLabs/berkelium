@@ -6,6 +6,7 @@ import {
 } from 'fs/promises';
 import {resolve, dirname} from 'path';
 import {constants} from 'fs';
+import useProgressStore from '../store/progress.js';
 
 /**
  * replace (Edit)
@@ -26,6 +27,7 @@ export async function replace(args: {
 
 	try {
 		const resolvedPath = resolve(filePath);
+		useProgressStore.getState().setProgress(`Replacing text in ${resolvedPath}`);
 
 		// If old_string is empty, create new file
 		if (oldString === '') {
@@ -48,9 +50,11 @@ export async function replace(args: {
 		}
 
 		// Read existing file
+		useProgressStore.getState().setProgress(`Reading file content`);
 		const content = await fsReadFile(resolvedPath, 'utf-8');
 
 		// Count occurrences
+		useProgressStore.getState().setProgress(`Counting occurrences of the string to be replaced`);
 		const occurrences = (
 			content.match(new RegExp(escapeRegExp(oldString), 'g')) || []
 		).length;
@@ -72,12 +76,15 @@ export async function replace(args: {
 		}
 
 		// Perform replacement
+				// Perform replacement
+		useProgressStore.getState().setProgress(`Performing replacement`);
 		const newContent = content.replace(
 			new RegExp(escapeRegExp(oldString), 'g'),
 			newString,
 		);
 
 		// Write back to file
+		useProgressStore.getState().setProgress(`Writing changes back to the file`);
 		await fsWriteFile(resolvedPath, newContent, 'utf-8');
 
 		return {
@@ -87,6 +94,7 @@ export async function replace(args: {
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : 'Unknown error';
+			useProgressStore.getState().setProgress(errorMessage);
 
 		if (errorMessage.includes('ENOENT')) {
 			return {

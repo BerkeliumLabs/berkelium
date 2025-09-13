@@ -4,6 +4,7 @@ import {
 	readFile as fsReadFile,
 	stat,
 } from 'fs/promises';
+import useProgressStore from '../store/progress.js';
 
 /**
  * read_many_files (Multi-File Reader)
@@ -44,8 +45,9 @@ export async function readManyFiles(args: {
 		];
 
 		// Combine all patterns
-		const allPaths = [...paths, ...include];
+				const allPaths = [...paths, ...include];
 		const allExcludes = useDefaultExcludes ? [...defaultExcludes, ...exclude] : exclude;
+		useProgressStore.getState().setProgress(`Reading files from ${allPaths.join(', ')}`);
 
 		// Get all matching files
 		const allFiles: string[] = [];
@@ -72,6 +74,7 @@ export async function readManyFiles(args: {
 
 		// Remove duplicates
 		const uniqueFiles = [...new Set(allFiles)];
+		useProgressStore.getState().setProgress(`Found ${uniqueFiles.length} files`);
 
 		if (uniqueFiles.length === 0) {
 			return {
@@ -81,6 +84,7 @@ export async function readManyFiles(args: {
 		}
 
 		// Process files
+		useProgressStore.getState().setProgress(`Processing ${uniqueFiles.length} files`);
 		const results: string[] = [];
 		let processedCount = 0;
 
@@ -149,6 +153,7 @@ export async function readManyFiles(args: {
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : 'Unknown error';
+			useProgressStore.getState().setProgress(errorMessage);
 		return {
 			success: false,
 			output: '',

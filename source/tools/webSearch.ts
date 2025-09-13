@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import useProgressStore from '../store/progress.js';
 
 export const webSearchSchema = z.object({
 	query: z.string().describe('The search query.'),
@@ -7,6 +8,7 @@ export const webSearchSchema = z.object({
 type WebSearchParams = z.infer<typeof webSearchSchema>;
 
 export const webSearch = async ({query}: WebSearchParams) => {
+	useProgressStore.getState().setProgress(`Searching the web for "${query}"`);
 	try {
 		const url = new URL('https://api.duckduckgo.com/');
 		url.searchParams.append('q', query);
@@ -27,6 +29,7 @@ export const webSearch = async ({query}: WebSearchParams) => {
 		}
 
 		const data = (await response.json()) as any;
+		useProgressStore.getState().setProgress(`Processing search results`);
 		const results: any[] = [];
 
 		if (data.AbstractText) {
@@ -56,8 +59,10 @@ export const webSearch = async ({query}: WebSearchParams) => {
 		return JSON.stringify(results, null, 2);
 	} catch (error) {
         if (error instanceof Error) {
+			useProgressStore.getState().setProgress(error.message);
             return `An error occurred while searching: ${error.message}`;
         }
+		useProgressStore.getState().setProgress('An unknown error occurred while searching.');
         return 'An unknown error occurred while searching.';
 	}
 };
