@@ -3,10 +3,8 @@ import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ConfigManager } from "../utils/config.js";
 import { tools } from "../tools/index.js";
 import { SystemMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
-import { executeTool } from "../tools/executor.js";
 import { ToolMessage } from "@langchain/core/messages";
 import { ToolCall } from "@langchain/core/messages/tool";
-import useProgressStore from "../store/progress.js";
 import { MemorySaver } from "@langchain/langgraph";
 import { useUsageMetaDataStore } from "../store/usage.js";
 
@@ -56,7 +54,12 @@ export class BerkeliumAgent {
     prompt: string,
     context: string,
     threadId: string
-  ): Promise<string> {
+  ): Promise<{
+    finished: boolean;
+    answer?: string;
+    toolCalls?: ToolCall[];
+    error?: string;
+  }> {
     const config = {
       configurable: {
         thread_id: threadId,
@@ -69,90 +72,137 @@ export class BerkeliumAgent {
       messages.push(new SystemMessage(context));
     }
     messages.push(new HumanMessage(prompt));
-    let finalAnswer = "";
-    const maxTurns = 10;
-    let turn = 0;
 
     try {
-      for (turn = 0; turn < maxTurns; turn++) {
-        const result = await this.berkeliumAgent.invoke(
-          { messages },
-          {
-            configurable: {
-              thread_id: threadId,
-            },
-          }
-        );
-        // console.log("✅ Response generated successfully", result);
-
-        if (result["tool_calls"] && result["tool_calls"].length > 0) {
-          // console.log("🔧 Tool calls detected:", result['tool_calls']);
-
-          // Run all tool calls in parallel
-          const toolResults = await Promise.all(
-            result["tool_calls"].map(async (toolCall: ToolCall) => {
-              const toolResult = await executeTool(
-                toolCall.name,
-                toolCall.args
-              );
-              console.log("🔧 Tool result:", toolResult);
-              useProgressStore
-                .getState()
-                .setProgress(toolResult || "Tool executed successfully");
-              return {
-                tool_call_id: toolCall.id,
-                result: toolResult,
-              };
-            })
-          );
-          const toolMessages = toolResults.map(
-            ({ result, tool_call_id }) => new ToolMessage(result, tool_call_id)
-          );
-
-          // Feed tool results back to the agent as system messages
-          messages = [...messages, ...toolMessages];
-        } else {
-          // console.log("✅ No tool calls detected, finalizing response.", result);
-          const aiResponse: AIMessage = (result["messages"].at(-1) as AIMessage);
-          const aiContent = aiResponse?.content;
-          if (typeof aiContent === "string") {
-            finalAnswer = aiContent;
-          } else if (Array.isArray(aiContent)) {
-            finalAnswer = aiContent
-              .map(item => {
-                if (typeof item === "string") {
-                  return item;
-                } else if ("text" in item && typeof item.text === "string") {
-                  return item.text;
-                } else if ("image_url" in item && typeof item.image_url === "string") {
-                  // Optionally handle image URLs or return a placeholder
-                  return "[Image]";
-                }
-                return "";
-              })
-              .join(" ");
-          } else {
-            finalAnswer = "";
-          }
-
-          if (aiResponse.response_metadata['finishReason'] !== 'STOP' && turn < maxTurns - 1) {
-            finalAnswer = `Reach ${turn + 1} turns limit. Type "continue" to proceed.`;
-          }
-
-          const usageMetaData = aiResponse?.usage_metadata ?? {
-            input_tokens: 0,
-            output_tokens: 0,
-            total_tokens: 0,
-          };
-          useUsageMetaDataStore.getState().setUsageMetaData(usageMetaData);
-          break;
+      const result = await this.berkeliumAgent.invoke(
+        { messages },
+        {
+          configurable: {
+            thread_id: threadId,
+          },
         }
+      );
+
+      if (result["tool_calls"] && result["tool_calls"].length > 0) {
+        // Return tool calls for external processing
+        return {
+          finished: false,
+          toolCalls: result["tool_calls"]
+        };
+      } else {
+        // Process final answer
+        const aiResponse: AIMessage = (result["messages"].at(-1) as AIMessage);
+        const aiContent = aiResponse?.content;
+        let finalAnswer = "";
+
+        if (typeof aiContent === "string") {
+          finalAnswer = aiContent;
+        } else if (Array.isArray(aiContent)) {
+          finalAnswer = aiContent
+            .map(item => {
+              if (typeof item === "string") {
+                return item;
+              } else if ("text" in item && typeof item.text === "string") {
+                return item.text;
+              } else if ("image_url" in item && typeof item.image_url === "string") {
+                return "[Image]";
+              }
+              return "";
+            })
+            .join(" ");
+        }
+
+        const usageMetaData = aiResponse?.usage_metadata ?? {
+          input_tokens: 0,
+          output_tokens: 0,
+          total_tokens: 0,
+        };
+        useUsageMetaDataStore.getState().setUsageMetaData(usageMetaData);
+
+        return {
+          finished: true,
+          answer: finalAnswer
+        };
       }
-      return finalAnswer;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      return `🔴 Berkelium Agent API error: ${errorMessage}`;
+      return {
+        finished: true,
+        error: `🔴 Berkelium Agent API error: ${errorMessage}`
+      };
+    }
+  }
+
+  async processToolResults(
+    toolResults: { tool_call_id: string; result: any }[],
+    threadId: string
+  ): Promise<{
+    finished: boolean;
+    answer?: string;
+    toolCalls?: ToolCall[];
+    error?: string;
+  }> {
+    try {
+      const toolMessages = toolResults.map(
+        ({ result, tool_call_id }) => new ToolMessage(result, tool_call_id)
+      );
+
+      const result = await this.berkeliumAgent.invoke(
+        { messages: toolMessages },
+        {
+          configurable: {
+            thread_id: threadId,
+          },
+        }
+      );
+
+      if (result["tool_calls"] && result["tool_calls"].length > 0) {
+        return {
+          finished: false,
+          toolCalls: result["tool_calls"]
+        };
+      } else {
+        const aiResponse: AIMessage = (result["messages"].at(-1) as AIMessage);
+        const aiContent = aiResponse?.content;
+        let finalAnswer = "";
+
+        if (typeof aiContent === "string") {
+          finalAnswer = aiContent;
+        } else if (Array.isArray(aiContent)) {
+          finalAnswer = aiContent
+            .map(item => {
+              if (typeof item === "string") {
+                return item;
+              } else if ("text" in item && typeof item.text === "string") {
+                return item.text;
+              } else if ("image_url" in item && typeof item.image_url === "string") {
+                return "[Image]";
+              }
+              return "";
+            })
+            .join(" ");
+        }
+
+        const usageMetaData = aiResponse?.usage_metadata ?? {
+          input_tokens: 0,
+          output_tokens: 0,
+          total_tokens: 0,
+        };
+        useUsageMetaDataStore.getState().setUsageMetaData(usageMetaData);
+
+        return {
+          finished: true,
+          answer: finalAnswer
+        };
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      return {
+        finished: true,
+        error: `🔴 Berkelium Agent API error: ${errorMessage}`
+      };
     }
   }
 }

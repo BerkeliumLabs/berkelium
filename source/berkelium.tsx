@@ -9,6 +9,8 @@ import {BerkeliumRouter} from './core/router.js';
 import Spinner from 'ink-spinner';
 import useProgressStore from './store/progress.js';
 import { useUsageMetaDataStore } from './store/usage.js';
+import usePermissionStore from './store/permission.js';
+import PermissionPrompt from './components/PermissionPrompt.js';
 const berkeliumPromptRouter = new BerkeliumRouter();
 
 export const BerkeliumCLI = () => {
@@ -24,6 +26,7 @@ export const BerkeliumCLI = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const {progress, resetProgress, setProgress} = useProgressStore();
 	const {input_tokens, output_tokens, total_tokens} = useUsageMetaDataStore();
+	const { status: permissionStatus } = usePermissionStore();
 
 	useEffect(() => {
 		setThreadId(Date.now().toString());
@@ -140,6 +143,9 @@ export const BerkeliumCLI = () => {
 
 	return (
 		<Box flexDirection="column">
+			{/* Permission prompt - highest priority */}
+			{permissionStatus === 'awaiting_permission' && <PermissionPrompt />}
+
 			{/* Loading indicator */}
 			{isLoading && (
 				<Text>
@@ -150,7 +156,17 @@ export const BerkeliumCLI = () => {
 				</Text>
 			)}
 
-			{isRunning && !isLoading && (
+			{/* Tool execution status */}
+			{permissionStatus === 'executing' && (
+				<Box marginBottom={1}>
+					<Text color="blue">
+						<Spinner type="dots" />
+						{' Executing tool...'}
+					</Text>
+				</Box>
+			)}
+
+			{isRunning && !isLoading && permissionStatus !== 'awaiting_permission' && (
 				<Box
 					borderStyle="round"
 					borderColor="#e05d38"
@@ -171,7 +187,7 @@ export const BerkeliumCLI = () => {
 				</Box>
 			)}
 
-			{mode !== 'input' && (
+			{mode !== 'input' && permissionStatus !== 'awaiting_permission' && (
 				<Box marginTop={1}>
 					<SelectInput items={filteredItems} onSelect={handleSelectChange} />
 				</Box>
