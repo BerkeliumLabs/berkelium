@@ -117,6 +117,24 @@ export const deleteFileSchema = z.object({
 	filePath: z.string().describe('The path to the file to delete'),
 });
 
+// 7. Schema for run_shell_command
+export const runShellCommandSchema = z.object({
+	command: z.string().describe('The exact shell command to execute'),
+	description: z
+		.string()
+		.optional()
+		.describe(
+			"A brief description of the command's purpose, which will be shown to the user",
+		),
+	directory: z
+		.string()
+		.optional()
+		.describe(
+			'The directory (relative to the project root) in which to execute the command. If not provided, the command runs in the project root',
+		),
+});
+
+// Legacy schema for backward compatibility
 export const runCommandSchema = z.object({
 	command: z.string().describe('The shell command to execute'),
 	workingDirectory: z

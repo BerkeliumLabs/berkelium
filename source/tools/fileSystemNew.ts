@@ -5,7 +5,6 @@ import {
 	mkdir,
 	readdir,
 	stat,
-	unlink,
 } from 'fs/promises';
 import {constants} from 'fs';
 import {resolve, dirname, join, relative} from 'path';

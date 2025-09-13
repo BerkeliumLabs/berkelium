@@ -7,6 +7,7 @@ import {
 	searchFileContent,
 	replace,
 } from './fileSystemNew.js';
+import {runShellCommand} from './shell.js';
 import {
 	listDirectorySchema,
 	readFileSchema,
@@ -14,6 +15,7 @@ import {
 	globSchema,
 	searchFileContentSchema,
 	replaceSchema,
+	runShellCommandSchema,
 } from './schemaNew.js';
 
 // 1. list_directory (ReadFolder) - Lists files and directories
@@ -64,6 +66,14 @@ export const replaceTool = tool(replace, {
 	schema: replaceSchema,
 });
 
+// 7. run_shell_command - Executes shell commands
+export const runShellCommandTool = tool(runShellCommand, {
+	name: 'run_shell_command',
+	description:
+		'Execute a shell command on the local system. Returns detailed information about the execution including command, directory, stdout, stderr, error, exit code, signal, and background PIDs. On Windows, commands are executed with cmd.exe /c. On other platforms, commands are executed with bash -c.',
+	schema: runShellCommandSchema,
+});
+
 export const tools = [
 	listDirectoryTool,
 	readFileTool,
@@ -71,4 +81,5 @@ export const tools = [
 	globTool,
 	searchFileContentTool,
 	replaceTool,
+	runShellCommandTool,
 ];
