@@ -8,6 +8,10 @@ import {
 	globTool,
 	searchFileContentTool,
 	replaceTool,
+	runShellCommandTool,
+	readManyFilesTool,
+	webFetchTool,
+	webSearchTool,
 } from './index.js';
 import usePermissionStore, {PermissionChoice} from '../store/permission.js';
 /* import { webSearch } from './webSearch.js'; */
@@ -22,6 +26,10 @@ export const availableTools = {
 	glob: globTool,
 	search_file_content: searchFileContentTool,
 	replace: replaceTool,
+	run_shell_command: runShellCommandTool,
+	read_many_files: readManyFilesTool,
+	web_fetch: webFetchTool,
+	web_search: webSearchTool,
 };
 
 /**
@@ -69,6 +77,18 @@ async function executeToolInternal(
 
 		case 'replace':
 			return await replaceTool.invoke(args);
+
+		case 'run_shell_command':
+			return await runShellCommandTool.invoke(args);
+
+		case 'read_many_files':
+			return await readManyFilesTool.invoke(args);
+
+		case 'web_fetch':
+			return await webFetchTool.invoke(args);
+
+		case 'web_search':
+			return await webSearchTool.invoke(args);
 
 		default:
 			return {
