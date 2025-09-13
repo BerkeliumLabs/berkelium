@@ -12,6 +12,7 @@ import {
 	runShellCommandSchema,
 	readManyFilesSchema,
 	webFetchSchema,
+	webSearchSchema,
 } from './schema.js';
 import { readFile } from './readFile.js';
 import { writeFile } from './writeFile.js';
@@ -19,6 +20,7 @@ import { glob } from './glob.js';
 import { searchFileContent } from './grep.js';
 import { replace } from './replace.js';
 import { readManyFiles } from './multiFileReader.js';
+import { webSearch } from './webSearch.js';
 
 // 1. list_directory (ReadFolder) - Lists files and directories
 export const listDirectoryTool = tool(listDirectory, {
@@ -92,6 +94,14 @@ export const webFetchTool = tool(webFetch, {
 	schema: webFetchSchema,
 });
 
+// 10. web_search - Web searcher
+export const webSearchTool = tool(webSearch, {
+	name: 'web_search',
+	description:
+		'Performs a web search using DuckDuckGo and returns the results.',
+	schema: webSearchSchema,
+});
+
 export const tools = [
 	listDirectoryTool,
 	readFileTool,
@@ -102,4 +112,5 @@ export const tools = [
 	runShellCommandTool,
 	readManyFilesTool,
 	webFetchTool,
+	webSearchTool,
 ];

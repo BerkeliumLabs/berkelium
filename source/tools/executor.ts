@@ -70,9 +70,6 @@ async function executeToolInternal(
 		case 'replace':
 			return await replaceTool.invoke(args);
 
-		/* case 'webSearch':
-      return webSearch(args.query, args.maxResults); */
-
 		default:
 			return {
 				success: false,

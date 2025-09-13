@@ -179,3 +179,8 @@ export const runCommandSchema = z.object({
 		.optional()
 		.describe('The working directory to run the command in (optional)'),
 });
+
+// 10. Schema for web_search
+export const webSearchSchema = z.object({
+	query: z.string().describe('The query to search the web for.'),
+});
