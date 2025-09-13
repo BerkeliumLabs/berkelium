@@ -1,7 +1,7 @@
 // Tool Executions
 import { StructuredToolCallInput } from '@langchain/core/tools';
 import { ToolCall } from '@langchain/core/messages/tool';
-import { readFileTool, writeFileTool, listDirectoryTool, createDirectoryTool, deleteFileTool } from './index.js';
+import { listDirectoryTool, readFileTool, writeFileTool, globTool, searchFileContentTool, replaceTool } from './index.js';
 import usePermissionStore, { PermissionChoice } from '../store/permission.js';
 /* import { webSearch } from './webSearch.js'; */
 
@@ -9,11 +9,12 @@ import usePermissionStore, { PermissionChoice } from '../store/permission.js';
  * Registry of available tools
  */
 export const availableTools = {
-  readFile: readFileTool,
-  writeFile: writeFileTool,
-  listDirectory: listDirectoryTool,
-  createDirectory: createDirectoryTool,
-  deleteFile: deleteFileTool
+  list_directory: listDirectoryTool,
+  read_file: readFileTool,
+  write_file: writeFileTool,
+  glob: globTool,
+  search_file_content: searchFileContentTool,
+  replace: replaceTool
 };
 
 /**
@@ -42,20 +43,23 @@ async function executeToolInternal(
   args: StructuredToolCallInput
 ): Promise<any> {
   switch (toolName) {
-    case 'readFile':
-      return await readFileTool.invoke(args);
-
-    case 'writeFile':
-      return await writeFileTool.invoke(args);
-
-    case 'listDirectory':
+    case 'list_directory':
       return await listDirectoryTool.invoke(args);
 
-    case 'createDirectory':
-      return await createDirectoryTool.invoke(args);
+    case 'read_file':
+      return await readFileTool.invoke(args);
 
-    case 'deleteFile':
-      return await deleteFileTool.invoke(args);
+    case 'write_file':
+      return await writeFileTool.invoke(args);
+
+    case 'glob':
+      return await globTool.invoke(args);
+
+    case 'search_file_content':
+      return await searchFileContentTool.invoke(args);
+
+    case 'replace':
+      return await replaceTool.invoke(args);
 
     /* case 'webSearch':
       return webSearch(args.query, args.maxResults); */

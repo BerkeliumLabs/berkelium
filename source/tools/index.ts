@@ -1,67 +1,86 @@
 import { tool } from "@langchain/core/tools";
-import { readFile, writeFile, listDirectory, createDirectory, deleteFile } from "./fileSystem.js";
-import { 
-  readFileSchema, 
-  writeFileSchema, 
-  listDirectorySchema, 
-  createDirectorySchema, 
-  deleteFileSchema
-} from "./schema.js";
-
-// @ts-ignore
-export const readFileTool = tool(
+import {
+  listDirectory,
   readFile,
-  {
-    name: "readFile",
-    description: "Read the contents of a file from the local file system. Use this when the user asks to see file contents or analyze existing code.",
-    schema: readFileSchema
-  }
-);
-
-// @ts-ignore
-export const writeFileTool = tool(
   writeFile,
-  {
-    name: "writeFile",
-    description: "Write content to a file on the local file system. Use this when the user asks to create a new file, modify an existing file, or save content to a specific location.",
-    schema: writeFileSchema
-  }
-);
+  glob,
+  searchFileContent,
+  replace
+} from "./fileSystemNew.js";
+import {
+  listDirectorySchema,
+  readFileSchema,
+  writeFileSchema,
+  globSchema,
+  searchFileContentSchema,
+  replaceSchema
+} from "./schemaNew.js";
 
-// @ts-ignore
+// 1. list_directory (ReadFolder) - Lists files and directories
 export const listDirectoryTool = tool(
   listDirectory,
   {
-    name: "listDirectory",
-    description: "List the contents of a directory. Use this when the user asks to see what files and folders are in a directory.",
+    name: "list_directory",
+    description: "List the names of files and subdirectories within a specified directory path. Can optionally ignore entries matching provided glob patterns.",
     schema: listDirectorySchema
   }
 );
 
-// @ts-ignore
-export const createDirectoryTool = tool(
-  createDirectory,
+// 2. read_file (ReadFile) - Reads file content with support for images/PDFs
+export const readFileTool = tool(
+  readFile,
   {
-    name: "createDirectory",
-    description: "Create a new directory on the local file system. Use this when the user asks to create a folder or directory structure.",
-    schema: createDirectorySchema
+    name: "read_file",
+    description: "Read and return the content of a specified file. Handles text, images (PNG, JPG, GIF, WEBP, SVG, BMP), and PDF files. For text files, can read specific line ranges.",
+    schema: readFileSchema
   }
 );
 
-// @ts-ignore
-export const deleteFileTool = tool(
-  deleteFile,
+// 3. write_file (WriteFile) - Writes content to files
+export const writeFileTool = tool(
+  writeFile,
   {
-    name: "deleteFile",
-    description: "Delete a file from the local file system. Use this when the user asks to remove or delete a file. This will prompt for user confirmation.",
-    schema: deleteFileSchema
+    name: "write_file",
+    description: "Write content to a specified file. If the file exists, it will be overwritten. If the file doesn't exist, it and any necessary parent directories will be created.",
+    schema: writeFileSchema
+  }
+);
+
+// 4. glob (FindFiles) - Finds files matching patterns
+export const globTool = tool(
+  glob,
+  {
+    name: "glob",
+    description: "Find files matching specific glob patterns (e.g., src/**/*.ts, *.md), returning absolute paths sorted by modification time (newest first).",
+    schema: globSchema
+  }
+);
+
+// 5. search_file_content (SearchText) - Searches within file contents
+export const searchFileContentTool = tool(
+  searchFileContent,
+  {
+    name: "search_file_content",
+    description: "Search for a regular expression pattern within the content of files in a specified directory. Can filter files by a glob pattern. Returns the lines containing matches.",
+    schema: searchFileContentSchema
+  }
+);
+
+// 6. replace (Edit) - Replaces text within files
+export const replaceTool = tool(
+  replace,
+  {
+    name: "replace",
+    description: "Replace text within a file. By default, replaces a single occurrence, but can replace multiple occurrences. Designed for precise, targeted changes requiring significant context.",
+    schema: replaceSchema
   }
 );
 
 export const tools = [
+  listDirectoryTool,
   readFileTool,
   writeFileTool,
-  listDirectoryTool,
-  createDirectoryTool,
-  deleteFileTool
+  globTool,
+  searchFileContentTool,
+  replaceTool
 ];
