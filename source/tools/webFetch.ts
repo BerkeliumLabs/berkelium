@@ -1,3 +1,5 @@
+import useProgressStore from '../store/progress.js';
+
 /**
  * web_fetch (Web Content Fetcher)
  * Fetches and processes content from web URLs embedded in a prompt
@@ -6,6 +8,7 @@ export async function webFetch(args: {
 	prompt: string;
 }): Promise<ToolResult> {
 	const {prompt} = args;
+	useProgressStore.getState().setProgress(`Fetching content from URLs in prompt`);
 
 	try {
 		// Extract URLs from the prompt (up to 20)
@@ -30,11 +33,13 @@ export async function webFetch(args: {
 
 		// Remove duplicates
 		const uniqueUrls = [...new Set(urls)];
+		useProgressStore.getState().setProgress(`Found ${uniqueUrls.length} unique URLs`);
 
 		// Note: User confirmation would typically be handled by the CLI interface
 		// For now, we proceed with fetching as the tool is designed to be autonomous
 
 		// Fetch content from each URL
+		useProgressStore.getState().setProgress(`Fetching content from ${uniqueUrls.length} URLs`);
 		const fetchPromises = uniqueUrls.map(async (url) => {
 			try {
 				// Create AbortController for timeout
@@ -132,6 +137,7 @@ export async function webFetch(args: {
 		});
 
 		// Wait for all fetches to complete
+		useProgressStore.getState().setProgress(`Waiting for all fetches to complete`);
 		const results = await Promise.all(fetchPromises);
 
 		// Format the response
@@ -180,6 +186,7 @@ export async function webFetch(args: {
 
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+		useProgressStore.getState().setProgress(errorMessage);
 		return {
 			success: false,
 			output: '',
