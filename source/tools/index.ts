@@ -1,14 +1,6 @@
 import {tool} from '@langchain/core/tools';
-import {
-	listDirectory,
-	readFile,
-	writeFile,
-	glob,
-	searchFileContent,
-	replace,
-	readManyFiles,
-	webFetch,
-} from './fileSystem.js';
+import {listDirectory} from './ls.js';
+import {webFetch} from './webFetch.js';
 import {runShellCommand} from './shell.js';
 import {
 	listDirectorySchema,
@@ -21,6 +13,12 @@ import {
 	readManyFilesSchema,
 	webFetchSchema,
 } from './schema.js';
+import { readFile } from './readFile.js';
+import { writeFile } from './writeFile.js';
+import { glob } from './glob.js';
+import { searchFileContent } from './grep.js';
+import { replace } from './replace.js';
+import { readManyFiles } from './multiFileReader.js';
 
 // 1. list_directory (ReadFolder) - Lists files and directories
 export const listDirectoryTool = tool(listDirectory, {
