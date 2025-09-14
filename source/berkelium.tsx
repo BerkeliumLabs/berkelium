@@ -75,12 +75,11 @@ export const BerkeliumCLI = () => {
 		} else if (mode === 'commands') {
 			const search = searchInput.toLowerCase();
 			const commands = berkeliumPromptRouter.getAvailableCommands();
-			setFilteredItems(
-				commands.filter(item =>
-					item.label.toLowerCase().includes(search) ||
-					item.value.toLowerCase().includes(search)
-				)
+			const filtered = commands.filter(item =>
+				item.label.toLowerCase().includes(search) ||
+				item.value.toLowerCase().includes(search)
 			);
+			setFilteredItems(filtered);
 		}
 	};
 
@@ -120,19 +119,24 @@ export const BerkeliumCLI = () => {
 	};
 
 	const handleSelectChange = (item: IHandleSelectChangeItem): void => {
-		let prefix = '';
-		let fullInput = '';
-		if (mode === 'files') {
-			fullInput = inputValue.split('#').slice(0, -1).join('#') ?? '';
-			prefix = '#';
-		} else if (mode === 'commands') {
-			fullInput = inputValue.split('/').slice(0, -1).join('/') ?? '';
-			prefix = '/';
+		if (!item || !item.value) {
+			return;
 		}
-		// Set the input value to the prefix plus the selected item's value
+
+		let newValue = '';
+		if (mode === 'files') {
+			const parts = inputValue.split('#');
+			const baseInput = parts.slice(0, -1).join('#');
+			newValue = baseInput + (baseInput ? '#' : '') + item.value;
+		} else if (mode === 'commands') {
+			// For commands, we want the result to be '/commandname'
+			newValue = '/' + item.value;
+		}
+
+		// Set the input value to the selected item
 		setMode('input');
 		setIsSelecting(false);
-		setInputValue(fullInput + prefix + item?.value);
+		setInputValue(newValue);
 		setInputKey(prevKey => prevKey + 1);
 	};
 

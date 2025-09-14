@@ -1,45 +1,30 @@
-import {readdirSync} from 'fs';
-import {join} from 'path';
 import type {BerkeliumCommand, ParsedCommand, CommandExecutionResult} from './types.js';
 import {parseCommand, interpolateArguments} from './parser.js';
+import initCommand from './init.js';
 
 export class CommandManager {
 	private commands: Map<string, BerkeliumCommand> = new Map();
-	private commandsDir: string;
 
-	constructor(commandsDir: string = './source/commands') {
-		this.commandsDir = commandsDir;
+	constructor() {
 		this.loadCommands();
 	}
 
-	private async loadCommands(): Promise<void> {
-		try {
-			const files = readdirSync(this.commandsDir);
-			const commandFiles = files.filter(file =>
-				file.endsWith('.js') && !file.includes('types') && !file.includes('parser') && !file.includes('manager')
-			);
+	private loadCommands(): void {
+		// Register built-in commands
+		const builtInCommands: BerkeliumCommand[] = [
+			initCommand,
+		];
 
-			for (const file of commandFiles) {
-				try {
-					const filePath = join(this.commandsDir, file);
-					const module = await import(filePath);
-					const command: BerkeliumCommand = module.default || module.command;
-
-					if (command && command.name && command.prompt) {
-						this.commands.set(command.name, command);
-					}
-				} catch (error) {
-					console.warn(`Failed to load command from ${file}:`, error);
-				}
+		for (const command of builtInCommands) {
+			if (command && command.name && command.prompt) {
+				this.commands.set(command.name, command);
 			}
-		} catch (error) {
-			console.warn('Commands directory not found or accessible:', error);
 		}
 	}
 
-	public async reloadCommands(): Promise<void> {
+	public reloadCommands(): void {
 		this.commands.clear();
-		await this.loadCommands();
+		this.loadCommands();
 	}
 
 	public getCommand(name: string): BerkeliumCommand | undefined {
