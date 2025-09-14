@@ -136,7 +136,9 @@ export async function runShellCommand(args: {
 			});
 
 			child.unref();
-			useProgressStore.getState().setProgress(`Started background process with PID: ${child.pid}`);
+			useProgressStore
+				.getState()
+				.setProgress(`Started background process with PID: ${child.pid}`);
 
 			resolve({
 				Command: command,

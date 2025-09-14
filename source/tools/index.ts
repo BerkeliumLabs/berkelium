@@ -14,13 +14,131 @@ import {
 	webFetchSchema,
 	webSearchSchema,
 } from './schema.js';
-import { readFile } from './readFile.js';
-import { writeFile } from './writeFile.js';
-import { glob } from './glob.js';
-import { searchFileContent } from './grep.js';
-import { replace } from './replace.js';
-import { readManyFiles } from './multiFileReader.js';
-import { webSearch } from './webSearch.js';
+import {readFile} from './readFile.js';
+import {writeFile} from './writeFile.js';
+import {glob} from './glob.js';
+import {searchFileContent} from './grep.js';
+import {replace} from './replace.js';
+import {readManyFiles} from './multiFileReader.js';
+import {webSearch} from './webSearch.js';
+import usePermissionStore, {PermissionChoice} from '../store/permission.js';
+
+/**
+ * Tools that require user permission before execution
+ */
+const PERMISSION_REQUIRED_TOOLS = [
+	'write_file',
+	'replace',
+	'run_shell_command',
+	'web_fetch',
+];
+
+/**
+ * Request permission for tool execution from the user
+ */
+async function requestPermission(
+	toolName: string,
+	args: any,
+): Promise<PermissionChoice> {
+	const store = usePermissionStore.getState();
+
+	// Check if permission was already granted for this session
+	if (store.hasSessionPermission(toolName)) {
+		return 'allow_session';
+	}
+
+	return new Promise((resolve, reject) => {
+		const toolCall = {
+			name: toolName,
+			args,
+			id: `${toolName}-${Date.now()}`,
+		};
+
+		store.setToolCall(toolCall);
+		store.setStatus('awaiting_permission');
+		store.setPermissionPromise({resolve, reject});
+
+		// Add a timeout to prevent hanging indefinitely
+		const timeoutId = setTimeout(() => {
+			const currentStore = usePermissionStore.getState();
+			if (currentStore.status === 'awaiting_permission') {
+				currentStore.resetPermissionState();
+				reject(new Error('Permission request timed out'));
+			}
+		}, 60000); // 60 second timeout
+
+		// Clear timeout if promise resolves normally
+		const originalResolve = resolve;
+		const wrappedResolve = (choice: PermissionChoice) => {
+			clearTimeout(timeoutId);
+			originalResolve(choice);
+		};
+
+		const originalReject = reject;
+		const wrappedReject = (error: Error) => {
+			clearTimeout(timeoutId);
+			originalReject(error);
+		};
+
+		// Update the promise in store with wrapped versions
+		store.setPermissionPromise({
+			resolve: wrappedResolve,
+			reject: wrappedReject,
+		});
+	});
+}
+
+/**
+ * Create a permission-aware wrapper for a tool function
+ */
+function withPermission<T extends (...args: any[]) => Promise<any>>(
+	toolName: string,
+	originalFunction: T,
+): T {
+	return (async (...args: any[]) => {
+		const store = usePermissionStore.getState();
+
+		try {
+			// Check if this tool requires permission
+			if (PERMISSION_REQUIRED_TOOLS.includes(toolName)) {
+				// Request permission for this tool execution
+				const permission = await requestPermission(toolName, args[0]);
+				if (permission === 'deny') {
+					store.resetPermissionState();
+					return {
+						success: false,
+						output: '',
+						error: `User denied permission to execute ${toolName}`,
+					};
+				}
+
+				// If permission granted for session, store it
+				if (permission === 'allow_session') {
+					store.addSessionPermission(toolName);
+				}
+
+				// Set status to executing
+				store.setStatus('executing');
+			}
+
+			// Execute the original function
+			const result = await originalFunction(...args);
+
+			// Reset permission state after execution (only if permission was required)
+			if (PERMISSION_REQUIRED_TOOLS.includes(toolName)) {
+				store.resetPermissionState();
+			}
+
+			return result;
+		} catch (error) {
+			// Reset permission state on error (only if permission was required)
+			if (PERMISSION_REQUIRED_TOOLS.includes(toolName)) {
+				store.resetPermissionState();
+			}
+			throw error;
+		}
+	}) as T;
+}
 
 // 1. list_directory (ReadFolder) - Lists files and directories
 export const listDirectoryTool = tool(listDirectory, {
@@ -39,7 +157,7 @@ export const readFileTool = tool(readFile, {
 });
 
 // 3. write_file (WriteFile) - Writes content to files
-export const writeFileTool = tool(writeFile, {
+export const writeFileTool = tool(withPermission('write_file', writeFile), {
 	name: 'write_file',
 	description:
 		"Write content to a specified file. If the file exists, it will be overwritten. If the file doesn't exist, it and any necessary parent directories will be created.",
@@ -63,7 +181,7 @@ export const searchFileContentTool = tool(searchFileContent, {
 });
 
 // 6. replace (Edit) - Replaces text within files
-export const replaceTool = tool(replace, {
+export const replaceTool = tool(withPermission('replace', replace), {
 	name: 'replace',
 	description:
 		'Replace text within a file. By default, replaces a single occurrence, but can replace multiple occurrences. Designed for precise, targeted changes requiring significant context.',
@@ -71,7 +189,7 @@ export const replaceTool = tool(replace, {
 });
 
 // 7. run_shell_command - Executes shell commands
-export const runShellCommandTool = tool(runShellCommand, {
+export const runShellCommandTool = tool(withPermission('run_shell_command', runShellCommand), {
 	name: 'run_shell_command',
 	description:
 		'Execute a shell command on the local system. Returns detailed information about the execution including command, directory, stdout, stderr, error, exit code, signal, and background PIDs. On Windows, commands are executed with cmd.exe /c. On other platforms, commands are executed with bash -c.',
@@ -87,7 +205,7 @@ export const readManyFilesTool = tool(readManyFiles, {
 });
 
 // 9. web_fetch - Web content fetcher
-export const webFetchTool = tool(webFetch, {
+export const webFetchTool = tool(withPermission('web_fetch', webFetch), {
 	name: 'web_fetch',
 	description:
 		'Fetch and process content from web URLs embedded in a prompt. Extracts URLs from the prompt (up to 20) and fetches their content. Handles text-based content including HTML, JSON, XML. Returns formatted response with source attribution.',

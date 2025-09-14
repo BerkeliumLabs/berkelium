@@ -1,9 +1,6 @@
 import {relative} from 'path';
 import {glob as globPattern} from 'glob';
-import {
-	readFile as fsReadFile,
-	stat,
-} from 'fs/promises';
+import {readFile as fsReadFile, stat} from 'fs/promises';
 import useProgressStore from '../store/progress.js';
 
 /**
@@ -45,9 +42,13 @@ export async function readManyFiles(args: {
 		];
 
 		// Combine all patterns
-				const allPaths = [...paths, ...include];
-		const allExcludes = useDefaultExcludes ? [...defaultExcludes, ...exclude] : exclude;
-		useProgressStore.getState().setProgress(`Reading files from ${allPaths.join(', ')}`);
+		const allPaths = [...paths, ...include];
+		const allExcludes = useDefaultExcludes
+			? [...defaultExcludes, ...exclude]
+			: exclude;
+		useProgressStore
+			.getState()
+			.setProgress(`Reading files from ${allPaths.join(', ')}`);
 
 		// Get all matching files
 		const allFiles: string[] = [];
@@ -74,7 +75,9 @@ export async function readManyFiles(args: {
 
 		// Remove duplicates
 		const uniqueFiles = [...new Set(allFiles)];
-		useProgressStore.getState().setProgress(`Found ${uniqueFiles.length} files`);
+		useProgressStore
+			.getState()
+			.setProgress(`Found ${uniqueFiles.length} files`);
 
 		if (uniqueFiles.length === 0) {
 			return {
@@ -84,7 +87,9 @@ export async function readManyFiles(args: {
 		}
 
 		// Process files
-		useProgressStore.getState().setProgress(`Processing ${uniqueFiles.length} files`);
+		useProgressStore
+			.getState()
+			.setProgress(`Processing ${uniqueFiles.length} files`);
 		const results: string[] = [];
 		let processedCount = 0;
 
@@ -98,10 +103,25 @@ export async function readManyFiles(args: {
 				// Check if it's a media file (images, PDFs, audio, video)
 				const ext = filePath.toLowerCase().split('.').pop() || '';
 				const mediaExtensions = [
-					'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico',
+					'png',
+					'jpg',
+					'jpeg',
+					'gif',
+					'webp',
+					'svg',
+					'bmp',
+					'ico',
 					'pdf',
-					'mp3', 'wav', 'flac', 'aac', 'm4a',
-					'mp4', 'mov', 'avi', 'mkv', 'webm'
+					'mp3',
+					'wav',
+					'flac',
+					'aac',
+					'm4a',
+					'mp4',
+					'mov',
+					'avi',
+					'mkv',
+					'webm',
 				];
 
 				if (mediaExtensions.includes(ext)) {
@@ -111,7 +131,9 @@ export async function readManyFiles(args: {
 					const relativePath = relative(process.cwd(), filePath);
 
 					results.push(`--- ${relativePath} ---`);
-					results.push(`[Base64 ${ext.toUpperCase()} file: ${buffer.length} bytes]`);
+					results.push(
+						`[Base64 ${ext.toUpperCase()} file: ${buffer.length} bytes]`,
+					);
 					results.push(base64Content);
 				} else {
 					// Handle as text file, but check for binary content
@@ -149,11 +171,10 @@ export async function readManyFiles(args: {
 			success: true,
 			output: `Read ${processedCount} files:\n\n${output}`,
 		};
-
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : 'Unknown error';
-			useProgressStore.getState().setProgress(errorMessage);
+		useProgressStore.getState().setProgress(errorMessage);
 		return {
 			success: false,
 			output: '',

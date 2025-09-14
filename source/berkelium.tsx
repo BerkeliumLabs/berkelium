@@ -26,7 +26,7 @@ export const BerkeliumCLI = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const {progress, resetProgress, setProgress} = useProgressStore();
 	const {input_tokens, output_tokens, total_tokens} = useUsageMetaDataStore();
-	const {status: permissionStatus} = usePermissionStore();
+	const permissionStatus = usePermissionStore(state => state.status);
 
 	useEffect(() => {
 		setThreadId(Date.now().toString());

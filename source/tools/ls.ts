@@ -1,8 +1,4 @@
-import {
-	access,
-	readdir,
-	stat,
-} from 'fs/promises';
+import {access, readdir, stat} from 'fs/promises';
 import {constants} from 'fs';
 import {resolve, join} from 'path';
 import useProgressStore from '../store/progress.js';
@@ -20,7 +16,9 @@ export async function listDirectory(args: {
 
 	try {
 		const resolvedPath = resolve(dirPath);
-		useProgressStore.getState().setProgress(`Listing directory: ${resolvedPath}`);
+		useProgressStore
+			.getState()
+			.setProgress(`Listing directory: ${resolvedPath}`);
 		await access(resolvedPath, constants.F_OK | constants.R_OK);
 
 		let entries = await readdir(resolvedPath);
@@ -108,4 +106,3 @@ export async function listDirectory(args: {
 		};
 	}
 }
-
