@@ -1,5 +1,3 @@
-import type {ParsedCommand} from './types.js';
-
 export function parseCommand(input: string): ParsedCommand {
 	if (!input.startsWith('/')) {
 		throw new Error('Invalid command format. Commands must start with "/"');

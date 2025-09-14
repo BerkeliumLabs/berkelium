@@ -1,4 +1,3 @@
-import type {BerkeliumCommand, ParsedCommand, CommandExecutionResult} from './types.js';
 import {parseCommand, interpolateArguments} from './parser.js';
 import initCommand from './init.js';
 

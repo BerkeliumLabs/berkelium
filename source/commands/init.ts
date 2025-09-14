@@ -1,5 +1,3 @@
-import type {BerkeliumCommand} from './types.js';
-
 const initCommand: BerkeliumCommand = {
 	name: 'init',
 	description: 'Generate project instructions for a given project scope',

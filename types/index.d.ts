@@ -34,5 +34,19 @@ declare global {
 		output: string;
 		error?: string;
 	}
+	interface BerkeliumCommand {
+		name: string;
+		description: string;
+		prompt: string;
+	}
+	interface ParsedCommand {
+		command: string;
+		arguments: string | null;
+	}
+	interface CommandExecutionResult {
+		success: boolean;
+		result?: string;
+		error?: string;
+	}
 }
 export {};
