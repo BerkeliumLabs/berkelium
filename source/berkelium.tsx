@@ -39,16 +39,16 @@ export const BerkeliumCLI = () => {
 			setIsSelecting(true);
 			setMode('files');
 			handleFilter(searchInput);
-		} else if (inputValue.endsWith('@')) {
+		} else if (inputValue.endsWith('/')) {
 			setIsSelecting(true);
-			setMode('roles');
-			const searchInput = inputValue.split('@').at(-1) ?? '';
+			setMode('commands');
+			const searchInput = inputValue.split('/').at(-1) ?? '';
 			handleFilter(searchInput);
 		} else if (mode === 'files') {
 			const searchInput = inputValue.split('#').at(-1) ?? '';
 			handleFilter(searchInput);
-		} else if (mode === 'roles') {
-			const searchInput = inputValue.split('@').at(-1) ?? '';
+		} else if (mode === 'commands') {
+			const searchInput = inputValue.split('/').at(-1) ?? '';
 			handleFilter(searchInput);
 		} else {
 			setMode('input');
@@ -73,10 +73,14 @@ export const BerkeliumCLI = () => {
 				files.filter(item => item.label.toLowerCase().includes(search)),
 			);
 		} else if (mode === 'commands') {
-			/* const search = searchInput.toLowerCase();
+			const search = searchInput.toLowerCase();
+			const commands = berkeliumPromptRouter.getAvailableCommands();
 			setFilteredItems(
-
-			); */
+				commands.filter(item =>
+					item.label.toLowerCase().includes(search) ||
+					item.value.toLowerCase().includes(search)
+				)
+			);
 		}
 	};
 
@@ -121,9 +125,9 @@ export const BerkeliumCLI = () => {
 		if (mode === 'files') {
 			fullInput = inputValue.split('#').slice(0, -1).join('#') ?? '';
 			prefix = '#';
-		} else if (mode === 'roles') {
-			fullInput = inputValue.split('@').slice(0, -1).join('@') ?? '';
-			prefix = '@';
+		} else if (mode === 'commands') {
+			fullInput = inputValue.split('/').slice(0, -1).join('/') ?? '';
+			prefix = '/';
 		}
 		// Set the input value to the prefix plus the selected item's value
 		setMode('input');
