@@ -4,7 +4,12 @@ import SelectInput from 'ink-select-input';
 import usePermissionStore, {PermissionChoice} from '../store/permission.js';
 
 const PermissionPrompt: React.FC = () => {
-	const {toolCallInProgress, permissionPromise} = usePermissionStore();
+	const toolCallInProgress = usePermissionStore(
+		state => state.toolCallInProgress,
+	);
+	const permissionPromise = usePermissionStore(
+		state => state.permissionPromise,
+	);
 
 	if (!toolCallInProgress || !permissionPromise) {
 		return null;
@@ -28,6 +33,15 @@ const PermissionPrompt: React.FC = () => {
 	const handleSelect = (item: {label: string; value: PermissionChoice}) => {
 		if (permissionPromise) {
 			permissionPromise.resolve(item.value);
+
+			// Update store based on choice
+			const store = usePermissionStore.getState();
+			if (item.value === 'allow_session' && toolCallInProgress) {
+				store.addSessionPermission(toolCallInProgress.name);
+			}
+
+			// Reset permission state after selection
+			store.resetPermissionState();
 		}
 	};
 
