@@ -53,16 +53,20 @@ export const webSearch = async ({query}: WebSearchParams) => {
 		}
 
 		if (results.length === 0) {
-			return `No results found for "${query}". Try searching on https://duckduckgo.com/?q=${encodeURIComponent(query)}`;
+			return `No results found for "${query}". Try searching on https://duckduckgo.com/?q=${encodeURIComponent(
+				query,
+			)}`;
 		}
 
 		return JSON.stringify(results, null, 2);
 	} catch (error) {
-        if (error instanceof Error) {
+		if (error instanceof Error) {
 			useProgressStore.getState().setProgress(error.message);
-            return `An error occurred while searching: ${error.message}`;
-        }
-		useProgressStore.getState().setProgress('An unknown error occurred while searching.');
-        return 'An unknown error occurred while searching.';
+			return `An error occurred while searching: ${error.message}`;
+		}
+		useProgressStore
+			.getState()
+			.setProgress('An unknown error occurred while searching.');
+		return 'An unknown error occurred while searching.';
 	}
 };

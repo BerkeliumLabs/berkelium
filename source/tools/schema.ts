@@ -138,25 +138,35 @@ export const runShellCommandSchema = z.object({
 export const readManyFilesSchema = z.object({
 	paths: z
 		.array(z.string())
-		.describe('An array of glob patterns or paths relative to the tool\'s target directory (e.g., ["src/**/*.ts"], ["README.md", "docs/*", "assets/logo.png"])'),
+		.describe(
+			'An array of glob patterns or paths relative to the tool\'s target directory (e.g., ["src/**/*.ts"], ["README.md", "docs/*", "assets/logo.png"])',
+		),
 	exclude: z
 		.array(z.string())
 		.optional()
-		.describe('Glob patterns for files/directories to exclude (e.g., ["**/*.log", "temp/"]). These are added to default excludes if useDefaultExcludes is true'),
+		.describe(
+			'Glob patterns for files/directories to exclude (e.g., ["**/*.log", "temp/"]). These are added to default excludes if useDefaultExcludes is true',
+		),
 	include: z
 		.array(z.string())
 		.optional()
-		.describe('Additional glob patterns to include. These are merged with paths (e.g., ["*.test.ts"] to specifically add test files if they were broadly excluded, or ["images/*.jpg"] to include specific image types)'),
+		.describe(
+			'Additional glob patterns to include. These are merged with paths (e.g., ["*.test.ts"] to specifically add test files if they were broadly excluded, or ["images/*.jpg"] to include specific image types)',
+		),
 	recursive: z
 		.boolean()
 		.optional()
 		.default(true)
-		.describe('Whether to search recursively. This is primarily controlled by ** in glob patterns'),
+		.describe(
+			'Whether to search recursively. This is primarily controlled by ** in glob patterns',
+		),
 	useDefaultExcludes: z
 		.boolean()
 		.optional()
 		.default(true)
-		.describe('Whether to apply a list of default exclusion patterns (e.g., node_modules, .git, non image/pdf binary files)'),
+		.describe(
+			'Whether to apply a list of default exclusion patterns (e.g., node_modules, .git, non image/pdf binary files)',
+		),
 	respect_git_ignore: z
 		.boolean()
 		.optional()
@@ -168,7 +178,9 @@ export const readManyFilesSchema = z.object({
 export const webFetchSchema = z.object({
 	prompt: z
 		.string()
-		.describe('A comprehensive prompt that includes the URL(s) (up to 20) to fetch and specific instructions on how to process their content. For example: "Summarize https://example.com/article and extract key points from https://another.com/data". The prompt must contain at least one URL starting with http:// or https://'),
+		.describe(
+			'A comprehensive prompt that includes the URL(s) (up to 20) to fetch and specific instructions on how to process their content. For example: "Summarize https://example.com/article and extract key points from https://another.com/data". The prompt must contain at least one URL starting with http:// or https://',
+		),
 });
 
 // Legacy schema for backward compatibility

@@ -18,7 +18,9 @@ export async function searchFileContent(args: {
 
 	try {
 		const resolvedPath = resolve(searchPath);
-		useProgressStore.getState().setProgress(`Searching for pattern "${pattern}" in ${resolvedPath}`);
+		useProgressStore
+			.getState()
+			.setProgress(`Searching for pattern "${pattern}" in ${resolvedPath}`);
 
 		// Try git grep first if available
 		let command = '';
@@ -47,7 +49,9 @@ export async function searchFileContent(args: {
 
 		try {
 			const {stdout} = await execAsync(command, {cwd: resolvedPath});
-			useProgressStore.getState().setProgress(`Found ${stdout.trim().split('\n').length} matches`);
+			useProgressStore
+				.getState()
+				.setProgress(`Found ${stdout.trim().split('\n').length} matches`);
 
 			if (!stdout.trim()) {
 				return {
@@ -102,7 +106,7 @@ export async function searchFileContent(args: {
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : 'Unknown error';
-			useProgressStore.getState().setProgress(errorMessage);
+		useProgressStore.getState().setProgress(errorMessage);
 		return {
 			success: false,
 			output: '',

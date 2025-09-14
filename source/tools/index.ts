@@ -14,13 +14,13 @@ import {
 	webFetchSchema,
 	webSearchSchema,
 } from './schema.js';
-import { readFile } from './readFile.js';
-import { writeFile } from './writeFile.js';
-import { glob } from './glob.js';
-import { searchFileContent } from './grep.js';
-import { replace } from './replace.js';
-import { readManyFiles } from './multiFileReader.js';
-import { webSearch } from './webSearch.js';
+import {readFile} from './readFile.js';
+import {writeFile} from './writeFile.js';
+import {glob} from './glob.js';
+import {searchFileContent} from './grep.js';
+import {replace} from './replace.js';
+import {readManyFiles} from './multiFileReader.js';
+import {webSearch} from './webSearch.js';
 
 // 1. list_directory (ReadFolder) - Lists files and directories
 export const listDirectoryTool = tool(listDirectory, {

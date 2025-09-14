@@ -33,6 +33,16 @@ export const availableTools = {
 };
 
 /**
+ * Tools that require user permission before execution
+ */
+const PERMISSION_REQUIRED_TOOLS = [
+	'write_file',
+	'replace',
+	'run_shell_command',
+	'web_fetch',
+];
+
+/**
  * Request permission for tool execution from the user
  */
 async function requestPermission(
@@ -46,9 +56,12 @@ async function requestPermission(
 	}
 
 	return new Promise((resolve, reject) => {
-		store.setToolCall(toolCall);
-		store.setStatus('awaiting_permission');
-		store.setPermissionPromise({resolve, reject});
+		// Use setTimeout to ensure the state updates happen in the next tick
+		setTimeout(() => {
+			store.setToolCall(toolCall);
+			store.setStatus('awaiting_permission');
+			store.setPermissionPromise({resolve, reject});
+		}, 0);
 	});
 }
 
@@ -106,35 +119,47 @@ export async function executeTool(toolCall: ToolCall): Promise<any> {
 	const store = usePermissionStore.getState();
 
 	try {
-		// Request permission for this tool execution
-		const permission = await requestPermission(toolCall);
+		// Check if this tool requires permission
+		const requiresPermission = PERMISSION_REQUIRED_TOOLS.includes(
+			toolCall.name,
+		);
 
-		if (permission === 'deny') {
-			store.resetPermissionState();
-			return {
-				success: false,
-				output: '',
-				error: `User denied permission to execute ${toolCall.name}`,
-			};
+		if (requiresPermission) {
+			// Request permission for this tool execution
+			const permission = await requestPermission(toolCall);
+
+			if (permission === 'deny') {
+				store.resetPermissionState();
+				return {
+					success: false,
+					output: '',
+					error: `User denied permission to execute ${toolCall.name}`,
+				};
+			}
+
+			// If permission granted for session, store it
+			if (permission === 'allow_session') {
+				store.addSessionPermission(toolCall.name);
+			}
+
+			// Set status to executing
+			store.setStatus('executing');
 		}
-
-		// If permission granted for session, store it
-		if (permission === 'allow_session') {
-			store.addSessionPermission(toolCall.name);
-		}
-
-		// Set status to executing
-		store.setStatus('executing');
 
 		// Execute the tool
 		const result = await executeToolInternal(toolCall.name, toolCall.args);
 
-		// Reset permission state after execution
-		store.resetPermissionState();
+		// Reset permission state after execution (only if permission was required)
+		if (requiresPermission) {
+			store.resetPermissionState();
+		}
 
 		return result;
 	} catch (error) {
-		store.resetPermissionState();
+		// Reset permission state on error (only if permission was required)
+		if (PERMISSION_REQUIRED_TOOLS.includes(toolCall.name)) {
+			store.resetPermissionState();
+		}
 		throw error;
 	}
 }

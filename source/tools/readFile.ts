@@ -1,8 +1,4 @@
-import {
-	readFile as fsReadFile,
-	access,
-	stat,
-} from 'fs/promises';
+import {readFile as fsReadFile, access, stat} from 'fs/promises';
 import {constants} from 'fs';
 import {resolve} from 'path';
 import useProgressStore from '../store/progress.js';
@@ -42,7 +38,9 @@ export async function readFile(args: {
 
 		if (imageExtensions.includes(extension)) {
 			// Handle image files - return base64 encoded
-			useProgressStore.getState().setProgress(`Reading image file: ${resolvedPath}`);
+			useProgressStore
+				.getState()
+				.setProgress(`Reading image file: ${resolvedPath}`);
 			const content = await fsReadFile(resolvedPath);
 			const mimeType = `image/${
 				extension.slice(1) === 'jpg' ? 'jpeg' : extension.slice(1)
@@ -60,7 +58,9 @@ export async function readFile(args: {
 
 		if (pdfExtensions.includes(extension)) {
 			// Handle PDF files - return base64 encoded
-			useProgressStore.getState().setProgress(`Reading PDF file: ${resolvedPath}`);
+			useProgressStore
+				.getState()
+				.setProgress(`Reading PDF file: ${resolvedPath}`);
 			const content = await fsReadFile(resolvedPath);
 			return {
 				success: true,
@@ -74,7 +74,9 @@ export async function readFile(args: {
 		}
 
 		// Handle text files
-		useProgressStore.getState().setProgress(`Reading text file: ${resolvedPath}`);
+		useProgressStore
+			.getState()
+			.setProgress(`Reading text file: ${resolvedPath}`);
 		const content = await fsReadFile(resolvedPath, 'utf-8');
 		const lines = content.split('\n');
 
@@ -82,7 +84,11 @@ export async function readFile(args: {
 		let truncationMessage = '';
 
 		if (offset !== undefined && limit !== undefined) {
-			useProgressStore.getState().setProgress(`Slicing file content from ${offset} to ${offset + limit}`);
+			useProgressStore
+				.getState()
+				.setProgress(
+					`Slicing file content from ${offset} to ${offset + limit}`,
+				);
 			const selectedLines = lines.slice(offset, offset + limit);
 			resultContent = selectedLines.join('\n');
 			truncationMessage = `[File content truncated: showing lines ${
@@ -91,7 +97,9 @@ export async function readFile(args: {
 				lines.length
 			} total lines]\n`;
 		} else if (lines.length > 2000) {
-			useProgressStore.getState().setProgress(`File too long, truncating to 2000 lines`);
+			useProgressStore
+				.getState()
+				.setProgress(`File too long, truncating to 2000 lines`);
 			const selectedLines = lines.slice(0, 2000);
 			resultContent = selectedLines.join('\n');
 			truncationMessage = `[File content truncated: showing first 2000 lines of ${lines.length} total lines]\n`;

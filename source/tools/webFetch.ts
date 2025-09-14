@@ -4,11 +4,11 @@ import useProgressStore from '../store/progress.js';
  * web_fetch (Web Content Fetcher)
  * Fetches and processes content from web URLs embedded in a prompt
  */
-export async function webFetch(args: {
-	prompt: string;
-}): Promise<ToolResult> {
+export async function webFetch(args: {prompt: string}): Promise<ToolResult> {
 	const {prompt} = args;
-	useProgressStore.getState().setProgress(`Fetching content from URLs in prompt`);
+	useProgressStore
+		.getState()
+		.setProgress(`Fetching content from URLs in prompt`);
 
 	try {
 		// Extract URLs from the prompt (up to 20)
@@ -19,7 +19,8 @@ export async function webFetch(args: {
 			return {
 				success: false,
 				output: '',
-				error: 'No URLs found in the prompt. Please include at least one URL starting with http:// or https://',
+				error:
+					'No URLs found in the prompt. Please include at least one URL starting with http:// or https://',
 			};
 		}
 
@@ -33,14 +34,18 @@ export async function webFetch(args: {
 
 		// Remove duplicates
 		const uniqueUrls = [...new Set(urls)];
-		useProgressStore.getState().setProgress(`Found ${uniqueUrls.length} unique URLs`);
+		useProgressStore
+			.getState()
+			.setProgress(`Found ${uniqueUrls.length} unique URLs`);
 
 		// Note: User confirmation would typically be handled by the CLI interface
 		// For now, we proceed with fetching as the tool is designed to be autonomous
 
 		// Fetch content from each URL
-		useProgressStore.getState().setProgress(`Fetching content from ${uniqueUrls.length} URLs`);
-		const fetchPromises = uniqueUrls.map(async (url) => {
+		useProgressStore
+			.getState()
+			.setProgress(`Fetching content from ${uniqueUrls.length} URLs`);
+		const fetchPromises = uniqueUrls.map(async url => {
 			try {
 				// Create AbortController for timeout
 				const controller = new AbortController();
@@ -51,10 +56,11 @@ export async function webFetch(args: {
 					method: 'GET',
 					headers: {
 						'User-Agent': 'Berkelium-WebFetch/1.0 (Web Content Analysis Tool)',
-						'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.1',
+						Accept:
+							'text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.1',
 						'Accept-Language': 'en-US,en;q=0.9',
 						'Accept-Encoding': 'gzip, deflate',
-						'Connection': 'keep-alive',
+						Connection: 'keep-alive',
 					},
 					redirect: 'follow',
 					signal: controller.signal,
@@ -73,10 +79,12 @@ export async function webFetch(args: {
 				const contentType = response.headers.get('content-type') || '';
 
 				// Only process text-based content
-				if (!contentType.includes('text/') &&
+				if (
+					!contentType.includes('text/') &&
 					!contentType.includes('application/json') &&
 					!contentType.includes('application/xml') &&
-					!contentType.includes('application/xhtml')) {
+					!contentType.includes('application/xhtml')
+				) {
 					return {
 						url,
 						success: false,
@@ -90,13 +98,25 @@ export async function webFetch(args: {
 				let cleanContent = content;
 				if (contentType.includes('text/html')) {
 					// Remove script, style, and other non-content tags
-					cleanContent = cleanContent.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-					cleanContent = cleanContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-					cleanContent = cleanContent.replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '');
+					cleanContent = cleanContent.replace(
+						/<script[^>]*>[\s\S]*?<\/script>/gi,
+						'',
+					);
+					cleanContent = cleanContent.replace(
+						/<style[^>]*>[\s\S]*?<\/style>/gi,
+						'',
+					);
+					cleanContent = cleanContent.replace(
+						/<noscript[^>]*>[\s\S]*?<\/noscript>/gi,
+						'',
+					);
 					cleanContent = cleanContent.replace(/<!--[\s\S]*?-->/gi, '');
 
 					// Convert common structural elements to readable format
-					cleanContent = cleanContent.replace(/<h([1-6])[^>]*>(.*?)<\/h[1-6]>/gi, '\n\n## $2\n\n');
+					cleanContent = cleanContent.replace(
+						/<h([1-6])[^>]*>(.*?)<\/h[1-6]>/gi,
+						'\n\n## $2\n\n',
+					);
 					cleanContent = cleanContent.replace(/<p[^>]*>/gi, '\n\n');
 					cleanContent = cleanContent.replace(/<\/p>/gi, '');
 					cleanContent = cleanContent.replace(/<br[^>]*>/gi, '\n');
@@ -125,9 +145,9 @@ export async function webFetch(args: {
 					content: cleanContent,
 					contentType,
 				};
-
 			} catch (error) {
-				const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+				const errorMessage =
+					error instanceof Error ? error.message : 'Unknown error';
 				return {
 					url,
 					success: false,
@@ -137,7 +157,9 @@ export async function webFetch(args: {
 		});
 
 		// Wait for all fetches to complete
-		useProgressStore.getState().setProgress(`Waiting for all fetches to complete`);
+		useProgressStore
+			.getState()
+			.setProgress(`Waiting for all fetches to complete`);
 		const results = await Promise.all(fetchPromises);
 
 		// Format the response
@@ -148,9 +170,11 @@ export async function webFetch(args: {
 			return {
 				success: false,
 				output: '',
-				error: `Failed to fetch content from any of the ${uniqueUrls.length} URL(s). Errors:\n${
-					failedFetches.map(f => `- ${f.url}: ${f.content}`).join('\n')
-				}`,
+				error: `Failed to fetch content from any of the ${
+					uniqueUrls.length
+				} URL(s). Errors:\n${failedFetches
+					.map(f => `- ${f.url}: ${f.content}`)
+					.join('\n')}`,
 			};
 		}
 
@@ -183,9 +207,9 @@ export async function webFetch(args: {
 			success: true,
 			output,
 		};
-
 	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+		const errorMessage =
+			error instanceof Error ? error.message : 'Unknown error';
 		useProgressStore.getState().setProgress(errorMessage);
 		return {
 			success: false,
