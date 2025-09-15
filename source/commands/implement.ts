@@ -5,17 +5,14 @@ export const implementCommand: BerkeliumCommand = {
 
 **Input**:
 * Read \`.feature\` file $ARGUMENTS and pass the content as \`$FEATURE_FILE_PATH\`.
-* Read the single source of truth file if exists, located at \`./.berkelium/BERKELIUM.md\`.
 
 **Task**:
 
 1.  **Analyze and Prepare**:
     * Read the \`.feature\` file from \`$FEATURE_FILE_PATH\`.
-    * Read the current application context from \`./.berkelium/BERKELIUM.md\` to understand the existing database schema, API endpoints, and shared components.
 
 2.  **Execute the Implementation**:
     * **Iterate Through Scenarios**: Address each scenario in the \`.feature\` file one by one.
-    * **Write Code**: Based on the scenario and the \`BERKELIUM.md\` file, write all necessary code. This includes creating new files, classes, functions, and API endpoints. Adhere to the existing architecture and best practices.
     * **Install Dependencies**: If a new library is required, install it using the appropriate package manager (e.g., \`pip\`, \`npm\`).
     * **Generate Tests**: Create dedicated test files that correspond to the scenarios in the \`.feature\` file.
     * **Run Tests & Debug**: Execute the tests. If a test fails, analyze the error, debug the code, and re-run the tests until all scenarios pass. Document your debugging process in the log.

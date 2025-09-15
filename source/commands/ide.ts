@@ -1,7 +1,7 @@
-const initCommand: BerkeliumCommand = {
-	name: 'init',
-	description: 'Generate project instructions for a given project scope',
-	prompt: `Generate project instructions file.
+export const ideCommand: BerkeliumCommand = {
+    name: 'ide',
+    description: 'Generate instruction file for the desired IDE',
+    prompt: `Generate project instructions file.
 
 ### **Instructions**
 
@@ -21,11 +21,17 @@ const initCommand: BerkeliumCommand = {
 
 ***
 
-**3. Generate the \`./.berkelium/BERKELIUM.md\` File**
-* **Compile Information**: Consolidate all the gathered information into a structured \`./.berkelium/BERKELIUM.md\` document. Use a clear, logical format with headings for each section (e.g., "Technology Stack", "Project Structure", "Database Schema", "API Endpoints", "Shared Components").
+**3. Generate the instruction File**
+* **Compile Information**: Consolidate all the gathered information into a structured document.
 
 # Output:
-Instructions should be saved to \`./.berkelium/BERKELIUM.md\` file in markdown format. File name should be in capital letters.
+Instructions should be saved as:
+- If $ARGUMENTS is equal to github save file to \`./.github/copilot-instructions.md\`
+- If $ARGUMENTS is equal to claude save file to \`./CLAUDE.md\`.
+- If $ARGUMENTS is equal to gemini save file to \`./GEMINI.md\`
+- If $ARGUMENTS is equal to qwen save file to \`./QWEN.md\`
+- Else do not generate a file and tell user that the $ARGUMENTS is not supported and tell them supported arguments.
+**Importatnt**: File name should be capital for CLAUDE.md, GEMINI.md, and QWEN.md.
 
 # Template:
 Instructions should be generated according to the following template:
@@ -112,7 +118,5 @@ This section details reusable code components, services, or functions that are a
     * **Description**: Contains the \`get_db_connection()\` function to manage database sessions.
 
 Document last updated: [Date & Time]
-\`\`\``,
-};
-
-export default initCommand;
+\`\`\``
+}

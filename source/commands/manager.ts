@@ -3,6 +3,7 @@ import initCommand from './init.js';
 import { discoveryCommand } from './discovery.js';
 import { formulateCommand } from './formulate.js';
 import { implementCommand } from './implement.js';
+import { ideCommand } from './ide.js';
 
 export class CommandManager {
 	private commands: Map<string, BerkeliumCommand> = new Map();
@@ -17,7 +18,8 @@ export class CommandManager {
 			initCommand,
 			discoveryCommand,
 			formulateCommand,
-			implementCommand
+			implementCommand,
+			ideCommand
 		];
 
 		for (const command of builtInCommands) {
