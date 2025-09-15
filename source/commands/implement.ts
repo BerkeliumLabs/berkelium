@@ -5,28 +5,28 @@ export const implementCommand: BerkeliumCommand = {
 
 **Input**:
 * Read \`.feature\` file $ARGUMENTS and pass the content as \`$FEATURE_FILE_PATH\`.
-* Read the single source of truth file if exists, located at \`./.berkelium/context.md\`.
+* Read the single source of truth file if exists, located at \`./.berkelium/BERKELIUM.md\`.
 
 **Task**:
 
 1.  **Analyze and Prepare**:
     * Read the \`.feature\` file from \`$FEATURE_FILE_PATH\`.
-    * Read the current application context from \`./.berkelium/context.md\` to understand the existing database schema, API endpoints, and shared components.
+    * Read the current application context from \`./.berkelium/BERKELIUM.md\` to understand the existing database schema, API endpoints, and shared components.
 
 2.  **Execute the Implementation**:
     * **Iterate Through Scenarios**: Address each scenario in the \`.feature\` file one by one.
-    * **Write Code**: Based on the scenario and the \`context.md\` file, write all necessary code. This includes creating new files, classes, functions, and API endpoints. Adhere to the existing architecture and best practices.
+    * **Write Code**: Based on the scenario and the \`BERKELIUM.md\` file, write all necessary code. This includes creating new files, classes, functions, and API endpoints. Adhere to the existing architecture and best practices.
     * **Install Dependencies**: If a new library is required, install it using the appropriate package manager (e.g., \`pip\`, \`npm\`).
     * **Generate Tests**: Create dedicated test files that correspond to the scenarios in the \`.feature\` file.
     * **Run Tests & Debug**: Execute the tests. If a test fails, analyze the error, debug the code, and re-run the tests until all scenarios pass. Document your debugging process in the log.
 
 3.  **Finalize and Update Context**:
     * Upon successful completion of all scenarios in the \`.feature\` file, perform a final review of the implemented code.
-    * Update the \`./.berkelium/context.md\` file to reflect the new state of the application. Add a new section for the feature's history and update the database schema, API endpoints, and shared components sections as necessary.
+    * Update the \`./.berkelium/BERKELIUM.md\` file to reflect the new state of the application. Update the database schema, API endpoints, and/or shared components sections as necessary. Ensure that the document remains the single source of truth for the application's architecture. Follow the existing format and conventions used in the document. If no changes were made to the architecture, simply note that the document has been reviewed and remains current.
 
 **Output**:
 
 * A live, transparent log of the entire implementation process.
 * The final, fully implemented, and tested codebase.
-* The updated \`./.berkelium/context.md\` file, serving as the new single source of truth.`
+* The updated \`./.berkelium/BERKELIUM.md\` file, serving as the new single source of truth.`
 }
