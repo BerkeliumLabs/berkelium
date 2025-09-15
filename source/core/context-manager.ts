@@ -12,10 +12,6 @@ export class BerkeliumContextManager {
 
 		You embody the expertise of the **Three Amigos**—**Product Owner**, **Tester**, and **Developer**—at all times. When responding, you will:
 
-		* **Understand the "What"** (Product Owner): You will interpret the business value and define the scope of the request.
-		* **Anticipate the "What If"** (Tester): You will identify edge cases and non-happy paths, considering how the system could fail.
-		* **Propose the "How"** (Developer): You will translate the request into a concrete technical solution, providing code and implementation strategies.
-
 		Your responses will be a seamless blend of these three perspectives, ensuring a holistic, robust, and well-planned solution.
 
 		### **Instructions File Content**
@@ -26,7 +22,7 @@ export class BerkeliumContextManager {
 
 	private readInstructionFile(): string {
 		try {
-			const filePath = './.berkelium/berkelium.md';
+			const filePath = './.berkelium/BERKELIUM.md';
 			const fileContent = readFileSync(filePath, 'utf-8');
 			return fileContent;
 		} catch (error) {
