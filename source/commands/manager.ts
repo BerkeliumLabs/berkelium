@@ -1,5 +1,7 @@
 import {parseCommand, interpolateArguments} from './parser.js';
 import initCommand from './init.js';
+import { discoveryCommand } from './discovery.js';
+import { formulateCommand } from './formulate.js';
 
 export class CommandManager {
 	private commands: Map<string, BerkeliumCommand> = new Map();
@@ -12,6 +14,8 @@ export class CommandManager {
 		// Register built-in commands
 		const builtInCommands: BerkeliumCommand[] = [
 			initCommand,
+			discoveryCommand,
+			formulateCommand
 		];
 
 		for (const command of builtInCommands) {
