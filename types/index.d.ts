@@ -48,5 +48,15 @@ declare global {
 		result?: string;
 		error?: string;
 	}
+	interface CreateFeatureBranchArgs {
+		feature_description: string;
+		json_mode?: boolean;
+	}
+	
+	interface CreateFeatureBranchResult {
+		success: boolean;
+		output: string;
+		error?: string;
+	}
 }
 export {};
