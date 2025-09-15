@@ -13,6 +13,7 @@ import {
 	readManyFilesSchema,
 	webFetchSchema,
 	webSearchSchema,
+	createFeatureBranchSchema,
 } from './schema.js';
 import {readFile} from './readFile.js';
 import {writeFile} from './writeFile.js';
@@ -21,6 +22,7 @@ import {searchFileContent} from './grep.js';
 import {replace} from './replace.js';
 import {readManyFiles} from './multiFileReader.js';
 import {webSearch} from './webSearch.js';
+import {createFeatureBranch} from './createFeatureBranch.js';
 import usePermissionStore, {PermissionChoice} from '../store/permission.js';
 
 /**
@@ -31,6 +33,7 @@ const PERMISSION_REQUIRED_TOOLS = [
 	'replace',
 	'run_shell_command',
 	'web_fetch',
+	'create_feature_branch',
 ];
 
 /**
@@ -220,6 +223,14 @@ export const webSearchTool = tool(webSearch, {
 	schema: webSearchSchema,
 });
 
+// 11. create_feature_branch - Creates a feature branch with auto-incrementing number
+export const createFeatureBranchTool = tool(withPermission('create_feature_branch', createFeatureBranch), {
+	name: 'create_feature_branch',
+	description:
+		'Creates a new feature branch with auto-incrementing number, switches to it, and creates a corresponding specs directory. Generates branch names from feature descriptions.',
+	schema: createFeatureBranchSchema,
+});
+
 export const tools = [
 	listDirectoryTool,
 	readFileTool,
@@ -231,4 +242,5 @@ export const tools = [
 	readManyFilesTool,
 	webFetchTool,
 	webSearchTool,
+	createFeatureBranchTool,
 ];

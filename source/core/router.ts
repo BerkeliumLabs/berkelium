@@ -1,17 +1,40 @@
 import {BerkeliumAgent} from './agent.js';
 import {BerkeliumContextManager} from './context-manager.js';
+import {CommandManager} from '../commands/manager.js';
 
 export class BerkeliumRouter {
 	private contextManager: BerkeliumContextManager;
 	private berkeliumAgent = new BerkeliumAgent();
+	private commandManager: CommandManager;
 
 	constructor() {
 		this.contextManager = new BerkeliumContextManager();
+		this.commandManager = new CommandManager();
 	}
 
 	async routePrompt(prompt: string, threadId: string): Promise<string> {
-		if (prompt.startsWith('@') && prompt.length > 1) {
-			return '';
+		if (prompt.startsWith('/') && prompt.length > 1) {
+			const result = await this.commandManager.executeCommand(prompt);
+
+			if (!result.success) {
+				return result.error || 'Command execution failed';
+			}
+
+			// Execute the interpolated prompt through the agent
+			this.contextManager.initializeContext();
+			const context = this.contextManager.context;
+
+			const agentResult = await this.berkeliumAgent.generateResponse(
+				result.result!,
+				context,
+				threadId,
+			);
+
+			if (agentResult.error) {
+				return agentResult.error;
+			}
+
+			return agentResult.answer || 'No response generated.';
 		} else {
 			this.contextManager.initializeContext();
 			const context = this.contextManager.context;
@@ -32,5 +55,13 @@ export class BerkeliumRouter {
 
 			return result.answer || 'No response generated.';
 		}
+	}
+
+	getAvailableCommands(): Array<{label: string; value: string}> {
+		const commands = this.commandManager.getAllCommands();
+		return commands.map(cmd => ({
+			label: `/${cmd.name} - ${cmd.description}`,
+			value: cmd.name,
+		}));
 	}
 }

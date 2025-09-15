@@ -11,7 +11,7 @@ const [{default: figlet}, {default: gradient}] = await Promise.all([
 
 const coolGradient = gradient(['#e6a08f', '#e05d38']);
 const welcomeArt = coolGradient(
-	figlet.textSync('Berkelium.dev', {
+	figlet.textSync('Berkelium CLI', {
 		font: 'ANSI Shadow',
 		horizontalLayout: 'default',
 		verticalLayout: 'default',

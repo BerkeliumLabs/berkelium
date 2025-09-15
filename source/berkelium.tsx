@@ -39,19 +39,20 @@ export const BerkeliumCLI = () => {
 			setIsSelecting(true);
 			setMode('files');
 			handleFilter(searchInput);
-		} else if (inputValue.endsWith('@')) {
+		} else if (inputValue.endsWith('/')) {
 			setIsSelecting(true);
-			setMode('roles');
-			const searchInput = inputValue.split('@').at(-1) ?? '';
+			setMode('commands');
+			const searchInput = inputValue.split('/').at(-1) ?? '';
 			handleFilter(searchInput);
-		} else if (mode === 'files') {
+		} else if (mode === 'files' && inputValue.includes('#')) {
 			const searchInput = inputValue.split('#').at(-1) ?? '';
 			handleFilter(searchInput);
-		} else if (mode === 'roles') {
-			const searchInput = inputValue.split('@').at(-1) ?? '';
+		} else if (mode === 'commands' && inputValue.includes('/')) {
+			const searchInput = inputValue.split('/').at(-1) ?? '';
 			handleFilter(searchInput);
 		} else {
 			setMode('input');
+			setIsSelecting(false);
 		}
 	}, [inputValue, mode, isSelecting]);
 
@@ -73,10 +74,13 @@ export const BerkeliumCLI = () => {
 				files.filter(item => item.label.toLowerCase().includes(search)),
 			);
 		} else if (mode === 'commands') {
-			/* const search = searchInput.toLowerCase();
-			setFilteredItems(
-
-			); */
+			const search = searchInput.toLowerCase();
+			const commands = berkeliumPromptRouter.getAvailableCommands();
+			const filtered = commands.filter(item =>
+				item.label.toLowerCase().includes(search) ||
+				item.value.toLowerCase().includes(search)
+			);
+			setFilteredItems(filtered);
 		}
 	};
 
@@ -116,19 +120,24 @@ export const BerkeliumCLI = () => {
 	};
 
 	const handleSelectChange = (item: IHandleSelectChangeItem): void => {
-		let prefix = '';
-		let fullInput = '';
-		if (mode === 'files') {
-			fullInput = inputValue.split('#').slice(0, -1).join('#') ?? '';
-			prefix = '#';
-		} else if (mode === 'roles') {
-			fullInput = inputValue.split('@').slice(0, -1).join('@') ?? '';
-			prefix = '@';
+		if (!item || !item.value) {
+			return;
 		}
-		// Set the input value to the prefix plus the selected item's value
+
+		let newValue = '';
+		if (mode === 'files') {
+			const parts = inputValue.split('#');
+			const baseInput = parts.slice(0, -1).join('#');
+			newValue = baseInput + (baseInput ? '#' : '') + item.value;
+		} else if (mode === 'commands') {
+			// For commands, we want the result to be '/commandname'
+			newValue = '/' + item.value;
+		}
+
+		// Set the input value to the selected item
 		setMode('input');
 		setIsSelecting(false);
-		setInputValue(fullInput + prefix + item?.value);
+		setInputValue(newValue);
 		setInputKey(prevKey => prevKey + 1);
 	};
 

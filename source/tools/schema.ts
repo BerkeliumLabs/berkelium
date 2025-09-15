@@ -196,3 +196,13 @@ export const runCommandSchema = z.object({
 export const webSearchSchema = z.object({
 	query: z.string().describe('The query to search the web for.'),
 });
+
+// 11. Schema for create_feature_branch
+export const createFeatureBranchSchema = z.object({
+	feature_description: z.string().describe('A summarized feature name for the feature description that the user provides'),
+	json_mode: z
+		.boolean()
+		.optional()
+		.default(false)
+		.describe('Whether to output results in JSON format instead of legacy key: value format'),
+});
