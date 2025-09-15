@@ -7,12 +7,13 @@ export const discoveryCommand: BerkeliumCommand = {
 
 **Task**:
 
-1.  **Clarify & Expand**: Use the initial input to generate a series of probing questions to better understand the user's needs, motivations, and the scope of the feature. This mimics the "Three Amigos" collaboration.
-2.  **Conduct Research**: Perform a web search to gather context, analyze similar features in the market, and identify potential best practices or pitfalls.
-3.  **Define Core Components**: Based on the gathered information, articulate the core user stories and acceptance criteria. Identify key stakeholders and their goals.
-4.  **Establish Boundaries & Constraints**: Define the technical and non-technical constraints, such as the required technology stack, security considerations, and any out-of-scope items.
-5.  **Generate Feature branch**: Create a feature branch for and parse its output for $BRANCH_NAME. All file paths must be absolute.
-6.  **Generate Requirements document**: Create a comprehensive Markdown document named \`./.berkelium/$BRANCH_NAME/requirements.md\` using the provided template. The document should be detailed, clear, and actionable for subsequent BDD stages.
+1.  **Read and Understand Context**: Check for the existence of a \`./.berkelium/memory.md\` file. If it exists, read its contents to understand the current state of the application's architecture, including the database schema, existing API endpoints, and shared components. Use this information to inform your analysis.
+2.  **Clarify & Expand**: Use the initial input to generate a series of probing questions to better understand the user's needs, motivations, and the scope of the feature. This mimics the "Three Amigos" collaboration.
+3.  **Conduct Research**: Perform a web search to gather context, analyze similar features in the market, and identify potential best practices or pitfalls.
+4.  **Define Core Components**: Based on the gathered information, articulate the core user stories and acceptance criteria. Identify key stakeholders and their goals.
+5.  **Establish Boundaries & Constraints**: Define the technical and non-technical constraints, such as the required technology stack, security considerations, and any out-of-scope items.
+6.  **Generate Feature branch**: Create a feature branch for and parse its output for $BRANCH_NAME. All file paths must be absolute.
+7.  **Generate Requirements document**: Create a comprehensive Markdown document named \`./.berkelium/$BRANCH_NAME/requirements.md\` using the provided template. The document should be detailed, clear, and actionable for subsequent BDD stages.
 
 **Output**:
 
