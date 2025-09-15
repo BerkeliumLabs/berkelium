@@ -8,7 +8,7 @@ const initCommand: BerkeliumCommand = {
 **1. Initial Project Scan & File Analysis**
 * **List Files and Directories**: Start by listing all directories and files in the current project.
 * **Handle Empty Projects**: If there are no existing files (an empty project), don't perform the scanning steps. Instead, directly generate a \`./.berkelium/BERKELIUM.md\` file using a pre-defined template. This template should contain generic placeholders for all the relevant sections, ready to be filled in by the user or the agent during the discovery phase. This ensures the workflow is consistent even on a fresh project. If it's not empty, proceed to the next steps.
-* **Filter Out Irrelevant Paths**: Ignore any files or directories specified in the \`.gitignore\` file. Also, ignore the following folders: \`.gemini\`, \`.claude\`, \`.github\`, and \`.berkelium\`. This prevents the agent from getting confused by its own internal files or other agent-related directories.
+* **Filter Out Irrelevant Paths**: Ignore any files or directories specified in the \`.gitignore\` file. Also, ignore the following folders: \`.git\`, \`.qwen\`, \`.gemini\`, \`.claude\`, \`.github\`, and \`.berkelium\`.
 * **Read and Summarize**: If files exist, read them. Analyze the file content to understand the purpose of key files. Don't just list the file; briefly explain what it does (e.g., \`app.py\`: "Main application entry point for the API.").
 
 ***
