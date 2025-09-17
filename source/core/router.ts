@@ -64,4 +64,12 @@ export class BerkeliumRouter {
 			value: cmd.name,
 		}));
 	}
+
+	/**
+	 * Clear the agent memory for a specific thread ID
+	 * @param threadId The thread ID to clear memory for
+	 */
+	clearAgentMemoryForThread(threadId: string): void {
+		this.berkeliumAgent.clearMemoryForThread(threadId);
+	}
 }

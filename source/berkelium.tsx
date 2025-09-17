@@ -100,6 +100,16 @@ export const BerkeliumCLI = () => {
 			} else if (value === 'help') {
 				handleHelpCommands();
 				setIsLoading(false);
+			} else if (value.startsWith('/') && value.includes('/clear')) {
+				// Clear agent memory for current thread
+				berkeliumPromptRouter.clearAgentMemoryForThread(threadId);
+				// Reset thread ID to start fresh conversation
+				setThreadId(Date.now().toString());
+				// Reset progress and usage stores
+				resetProgress();
+				setIsLoading(false);
+				console.log("Agent memory cleared.")
+				return; // Exit early to prevent further processing
 			} else {
 				const response = await berkeliumPromptRouter.routePrompt(
 					value,

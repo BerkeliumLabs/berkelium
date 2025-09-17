@@ -211,4 +211,25 @@ export class BerkeliumAgent {
 			};
 		}
 	}
+
+	/**
+	 * Clear the memory for a specific thread ID
+	 * @param threadId The thread ID to clear memory for
+	 */
+	clearMemoryForThread(threadId: string): void {
+		try {
+			// Clear the checkpoint for this thread_id from the memory store
+			if (this.memory && (this.memory as any).storage) {
+				const storage = (this.memory as any).storage;
+				// Delete all checkpoint entries for the given thread_id
+				for (const key in storage) {
+					if (key.startsWith(`thread_id:${threadId}`) || key.includes(threadId)) {
+						delete storage[key];
+					}
+				}
+			}
+		} catch (error) {
+			console.warn('Warning: Failed to clear agent memory for thread:', threadId, error);
+		}
+	}
 }
