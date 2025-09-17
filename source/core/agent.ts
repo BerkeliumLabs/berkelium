@@ -232,4 +232,58 @@ export class BerkeliumAgent {
 			console.warn('Warning: Failed to clear agent memory for thread:', threadId, error);
 		}
 	}
+
+	/**
+	 * Get current conversation messages for a thread
+	 * @param threadId The thread ID to get messages for
+	 * @returns Array of messages or empty array if no messages found
+	 */
+	async getConversationHistory(threadId: string): Promise<any[]> {
+		try {
+			const config = {
+				configurable: {
+					thread_id: threadId,
+				},
+			};
+			const checkpoint = await this.memory.get(config);
+			return checkpoint?.channel_values['messages'] ?? [];
+		} catch (error) {
+			console.warn('Warning: Failed to get conversation history for thread:', threadId, error);
+			return [];
+		}
+	}
+
+	/**
+	 * Compress conversation memory by replacing it with a summary
+	 * @param threadId The thread ID to compress memory for
+	 * @param summary The summary to replace the conversation with
+	 * @param systemContext The system context to preserve
+	 */
+	async compressMemoryForThread(threadId: string, summary: string, systemContext: string): Promise<void> {
+		try {
+			// Clear existing memory
+			this.clearMemoryForThread(threadId);
+
+			// Create new compressed memory with system message and summary
+			const compressedMessages = [
+				new SystemMessage(systemContext),
+				new HumanMessage(`[CONVERSATION SUMMARY FROM PREVIOUS SESSION]\n\n${summary}`)
+			];
+
+			// Initialize the memory with compressed content
+			const config = {
+				configurable: {
+					thread_id: threadId,
+				},
+			};
+
+			// Invoke with the compressed messages to establish new baseline
+			await this.berkeliumAgent.invoke(
+				{ messages: compressedMessages },
+				config
+			);
+		} catch (error) {
+			console.warn('Warning: Failed to compress memory for thread:', threadId, error);
+		}
+	}
 }

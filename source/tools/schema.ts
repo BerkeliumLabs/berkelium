@@ -206,3 +206,8 @@ export const createFeatureBranchSchema = z.object({
 		.default(false)
 		.describe('Whether to output results in JSON format instead of legacy key: value format'),
 });
+
+// 12. Schema for compress_memory
+export const compressMemorySchema = z.object({
+	thread_id: z.string().optional().describe('The thread ID for the current conversation to compress. If not provided, uses the current active thread.'),
+});

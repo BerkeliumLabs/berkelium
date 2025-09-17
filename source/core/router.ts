@@ -1,6 +1,7 @@
 import {BerkeliumAgent} from './agent.js';
 import {BerkeliumContextManager} from './context-manager.js';
 import {CommandManager} from '../commands/manager.js';
+import {memoryCompressionRegistry} from '../tools/compressMemory.js';
 
 export class BerkeliumRouter {
 	private contextManager: BerkeliumContextManager;
@@ -10,9 +11,15 @@ export class BerkeliumRouter {
 	constructor() {
 		this.contextManager = new BerkeliumContextManager();
 		this.commandManager = new CommandManager();
+
+		// Register instances with memory compression registry
+		memoryCompressionRegistry.setInstances(this.berkeliumAgent, this.contextManager);
 	}
 
 	async routePrompt(prompt: string, threadId: string): Promise<string> {
+		// Set the current thread ID for memory compression tool access
+		memoryCompressionRegistry.setCurrentThreadId(threadId);
+
 		if (prompt.startsWith('/') && prompt.length > 1) {
 			const result = await this.commandManager.executeCommand(prompt);
 
