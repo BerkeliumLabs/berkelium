@@ -14,6 +14,7 @@ import {
 	webFetchSchema,
 	webSearchSchema,
 	createFeatureBranchSchema,
+	compressMemorySchema,
 } from './schema.js';
 import {readFile} from './readFile.js';
 import {writeFile} from './writeFile.js';
@@ -23,6 +24,7 @@ import {replace} from './replace.js';
 import {readManyFiles} from './multiFileReader.js';
 import {webSearch} from './webSearch.js';
 import {createFeatureBranch} from './createFeatureBranch.js';
+import {compressMemory} from './compressMemory.js';
 import usePermissionStore, {PermissionChoice} from '../store/permission.js';
 
 /**
@@ -231,6 +233,14 @@ export const createFeatureBranchTool = tool(withPermission('create_feature_branc
 	schema: createFeatureBranchSchema,
 });
 
+// 12. compress_memory - Compresses conversation memory to save tokens
+export const compressMemoryTool = tool(compressMemory, {
+	name: 'compress_memory',
+	description:
+		'Compresses the current conversation memory by creating a comprehensive summary and replacing the full conversation history with it. This saves tokens while preserving important context for future interactions.',
+	schema: compressMemorySchema,
+});
+
 export const tools = [
 	listDirectoryTool,
 	readFileTool,
@@ -243,4 +253,5 @@ export const tools = [
 	webFetchTool,
 	webSearchTool,
 	createFeatureBranchTool,
+	compressMemoryTool,
 ];

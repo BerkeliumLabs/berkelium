@@ -30,7 +30,7 @@ export class BerkeliumAgent {
 
 			// Initialize the context manager with the API key
 			const llm = new ChatGoogleGenerativeAI({
-				model: process.env['GEMINI_MODEL'] || 'gemini-2.5-flash-lite',
+				model: process.env['GEMINI_MODEL'] || 'gemini-2.0-flash-lite',
 				maxOutputTokens: 2048,
 				apiKey: apiKey,
 			});
@@ -246,7 +246,7 @@ export class BerkeliumAgent {
 				},
 			};
 			const checkpoint = await this.memory.get(config);
-			return checkpoint?.channel_values['messages'] ?? [];
+			return checkpoint?.channel_values['messages'] as any[] ?? [];
 		} catch (error) {
 			console.warn('Warning: Failed to get conversation history for thread:', threadId, error);
 			return [];

@@ -1,5 +1,6 @@
 import {BerkeliumAgent} from '../core/agent.js';
 import {BerkeliumContextManager} from '../core/context-manager.js';
+import useProgressStore from '../store/progress.js';
 
 /**
  * Global registry to access the current agent and context manager instances
@@ -53,6 +54,7 @@ export async function compressMemory({thread_id}: CompressMemoryArgs): Promise<{
 	error?: string;
 }> {
 	try {
+		useProgressStore.getState().setProgress('Compressing memory...');
 		const agent = memoryCompressionRegistry.getAgent();
 		const contextManager = memoryCompressionRegistry.getContextManager();
 
@@ -83,8 +85,27 @@ export async function compressMemory({thread_id}: CompressMemoryArgs): Promise<{
 			};
 		}
 
-		// Get current conversation history
-		const messages = await agent.getConversationHistory(targetThreadId);
+		useProgressStore
+			.getState()
+			.setProgress('Retrieving conversation history...');
+		// Get current conversation history with timeout protection
+		const historyTimeoutPromise = new Promise<any[]>((_, reject) => {
+			setTimeout(() => reject(new Error('Conversation history retrieval timed out after 10 seconds')), 10000);
+		});
+		
+		let messages;
+		try {
+			messages = await Promise.race([
+				agent.getConversationHistory(targetThreadId),
+				historyTimeoutPromise
+			]);
+		} catch (historyError: any) {
+			return {
+				success: false,
+				output: '',
+				error: `Failed to retrieve conversation history: ${historyError.message}. Please try again later.`,
+			};
+		}
 
 		if (messages.length === 0) {
 			return {
@@ -94,6 +115,9 @@ export async function compressMemory({thread_id}: CompressMemoryArgs): Promise<{
 			};
 		}
 
+		useProgressStore
+			.getState()
+			.setProgress('Formatting conversation for summarization...');
 		// Format messages into readable text for summarization
 		const conversationText = messages
 			.map((msg: any) => {
@@ -128,13 +152,31 @@ Please provide a structured summary that will serve as compressed memory for fut
 		contextManager.initializeContext();
 		const systemContext = contextManager.context;
 
+		useProgressStore.getState().setProgress('Generating conversation summary...');
 		// Generate summary using a temporary thread to avoid affecting current conversation
 		const summaryThreadId = `${targetThreadId}_summary_${Date.now()}`;
-		const summaryResult = await agent.generateResponse(
-			summarizationPrompt,
-			systemContext,
-			summaryThreadId
-		);
+		
+		// Implement timeout mechanism to prevent hanging
+		const timeoutPromise = new Promise<{ finished: boolean; answer?: string; error?: string }>((_, reject) => {
+			setTimeout(() => reject(new Error('Response generation timed out after 30 seconds')), 30000);
+		});
+		
+		let summaryResult;
+		try {
+			summaryResult = await Promise.race([
+				agent.generateResponse(summarizationPrompt, systemContext, summaryThreadId),
+				timeoutPromise
+			]);
+		} catch (timeoutError: any) {
+			// Clean up temporary thread on timeout
+			agent.clearMemoryForThread(summaryThreadId);
+			
+			return {
+				success: false,
+				output: '',
+				error: `Response generation timed out: ${timeoutError.message}. This can happen due to network issues or heavy API load. Please try again later.`,
+			};
+		}
 
 		if (summaryResult.error || !summaryResult.answer) {
 			return {
@@ -146,8 +188,24 @@ Please provide a structured summary that will serve as compressed memory for fut
 
 		const summary = summaryResult.answer;
 
+		useProgressStore.getState().setProgress('Compressing memory with summary...');
 		// Compress the memory with the summary
-		await agent.compressMemoryForThread(targetThreadId, summary, systemContext);
+		const compressTimeoutPromise = new Promise<void>((_, reject) => {
+			setTimeout(() => reject(new Error('Memory compression timed out after 30 seconds')), 30000);
+		});
+		
+		try {
+			await Promise.race([
+				agent.compressMemoryForThread(targetThreadId, summary, systemContext),
+				compressTimeoutPromise
+			]);
+		} catch (compressError: any) {
+			return {
+				success: false,
+				output: '',
+				error: `Memory compression timed out: ${compressError.message}. Please try again later.`,
+			};
+		}
 
 		// Clean up temporary thread
 		agent.clearMemoryForThread(summaryThreadId);
@@ -163,6 +221,7 @@ The conversation history has been replaced with this summary to save tokens whil
 		};
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+		useProgressStore.getState().setProgress(errorMessage);
 		return {
 			success: false,
 			output: '',
