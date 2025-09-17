@@ -21,7 +21,7 @@ const welcomeArt = coolGradient(
 
 const instructions = chalk.blueBright(
 	`Version ${process.env['npm_package_version']}
-Type your questions or commands. Use "help" for available commands, "exit" or "quit" to leave.\n`,
+Type your questions or commands. Enter "exit", "quit" or press Ctrl+C twice to shutdown the agent.\n`,
 );
 
 console.log(welcomeArt);

@@ -4,7 +4,6 @@ import TextInput from 'ink-text-input';
 import SelectInput from 'ink-select-input';
 import {readdirSync} from 'fs';
 import chalk from 'chalk';
-import {handleHelpCommands} from './utils/help-commands.js';
 import {BerkeliumRouter} from './core/router.js';
 import Spinner from 'ink-spinner';
 import useProgressStore from './store/progress.js';
@@ -97,9 +96,6 @@ export const BerkeliumCLI = () => {
 			// Handle common commands
 			if (value === 'exit' || value === 'quit') {
 				handleExit();
-			} else if (value === 'help') {
-				handleHelpCommands();
-				setIsLoading(false);
 			} else if (value.startsWith('/') && value.includes('/clear')) {
 				// Clear agent memory for current thread
 				berkeliumPromptRouter.clearAgentMemoryForThread(threadId);
