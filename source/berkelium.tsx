@@ -38,7 +38,7 @@ export const BerkeliumCLI = () => {
 			setIsSelecting(true);
 			setMode('files');
 			handleFilter(searchInput);
-		} else if (inputValue.endsWith('/')) {
+		} else if (inputValue.startsWith('/')) {
 			setIsSelecting(true);
 			setMode('commands');
 			const searchInput = inputValue.split('/').at(-1) ?? '';
