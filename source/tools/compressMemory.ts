@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import {BerkeliumAgent} from '../core/agent.js';
 import {BerkeliumContextManager} from '../core/context-manager.js';
 import useProgressStore from '../store/progress.js';
@@ -20,7 +21,10 @@ class MemoryCompressionRegistry {
 		return MemoryCompressionRegistry.instance;
 	}
 
-	public setInstances(agent: BerkeliumAgent, contextManager: BerkeliumContextManager) {
+	public setInstances(
+		agent: BerkeliumAgent,
+		contextManager: BerkeliumContextManager,
+	) {
 		this.agent = agent;
 		this.contextManager = contextManager;
 	}
@@ -42,7 +46,8 @@ class MemoryCompressionRegistry {
 	}
 }
 
-export const memoryCompressionRegistry = MemoryCompressionRegistry.getInstance();
+export const memoryCompressionRegistry =
+	MemoryCompressionRegistry.getInstance();
 
 export interface CompressMemoryArgs {
 	thread_id?: string;
@@ -55,10 +60,12 @@ export async function compressMemory({thread_id}: CompressMemoryArgs): Promise<{
 }> {
 	try {
 		useProgressStore.getState().setProgress('Compressing memory...');
+		console.log(`${chalk.hex('#e05d38').bold('●')} Compressing memory`);
 		const agent = memoryCompressionRegistry.getAgent();
 		const contextManager = memoryCompressionRegistry.getContextManager();
 
 		if (!agent) {
+			console.log(`└─ ${chalk.red('Agent instance not available for memory compression')}\n`);
 			return {
 				success: false,
 				output: '',
@@ -67,6 +74,7 @@ export async function compressMemory({thread_id}: CompressMemoryArgs): Promise<{
 		}
 
 		if (!contextManager) {
+			console.log(`└─ ${chalk.red('Context manager instance not available for memory compression')}\n`);
 			return {
 				success: false,
 				output: '',
@@ -75,9 +83,11 @@ export async function compressMemory({thread_id}: CompressMemoryArgs): Promise<{
 		}
 
 		// Use the provided thread_id, or fall back to the current thread ID if not provided
-		const targetThreadId = thread_id || memoryCompressionRegistry.getCurrentThreadId();
+		const targetThreadId =
+			thread_id || memoryCompressionRegistry.getCurrentThreadId();
 
 		if (!targetThreadId) {
+			console.log(`└─ ${chalk.red('No thread ID available for memory compression')}\n`);
 			return {
 				success: false,
 				output: '',
@@ -88,18 +98,29 @@ export async function compressMemory({thread_id}: CompressMemoryArgs): Promise<{
 		useProgressStore
 			.getState()
 			.setProgress('Retrieving conversation history...');
+		console.log(`├─ ${chalk.yellow('Retrieving conversation history')}`);
 		// Get current conversation history with timeout protection
 		const historyTimeoutPromise = new Promise<any[]>((_, reject) => {
-			setTimeout(() => reject(new Error('Conversation history retrieval timed out after 10 seconds')), 10000);
+			setTimeout(
+				() =>
+					reject(
+						new Error(
+							'Conversation history retrieval timed out after 10 seconds',
+						),
+					),
+				10000,
+			);
 		});
-		
+
 		let messages;
 		try {
+			console.log(`├─ ${chalk.yellow('Getting conversation history')}`);
 			messages = await Promise.race([
 				agent.getConversationHistory(targetThreadId),
-				historyTimeoutPromise
+				historyTimeoutPromise,
 			]);
 		} catch (historyError: any) {
+			console.log(`└─ ${chalk.red(`Failed to retrieve conversation history: ${historyError.message}. Please try again later.`)}\n`);
 			return {
 				success: false,
 				output: '',
@@ -108,6 +129,7 @@ export async function compressMemory({thread_id}: CompressMemoryArgs): Promise<{
 		}
 
 		if (messages.length === 0) {
+			console.log(`└─ ${chalk.red('No conversation history found to compress')}\n`);
 			return {
 				success: false,
 				output: '',
@@ -118,11 +140,17 @@ export async function compressMemory({thread_id}: CompressMemoryArgs): Promise<{
 		useProgressStore
 			.getState()
 			.setProgress('Formatting conversation for summarization...');
+		console.log(
+			`├─ ${chalk.yellow('Formatting conversation for summarization')}`,
+		);
 		// Format messages into readable text for summarization
 		const conversationText = messages
 			.map((msg: any) => {
 				const type = msg._getType ? msg._getType() : msg.type || 'unknown';
-				const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
+				const content =
+					typeof msg.content === 'string'
+						? msg.content
+						: JSON.stringify(msg.content);
 
 				if (type === 'system') return `[SYSTEM]: ${content}`;
 				if (type === 'human') return `[USER]: ${content}`;
@@ -152,25 +180,42 @@ Please provide a structured summary that will serve as compressed memory for fut
 		contextManager.initializeContext();
 		const systemContext = contextManager.context;
 
-		useProgressStore.getState().setProgress('Generating conversation summary...');
+		useProgressStore
+			.getState()
+			.setProgress('Generating conversation summary...');
+		console.log(`├─ ${chalk.yellow('Generating conversation summary')}`);
 		// Generate summary using a temporary thread to avoid affecting current conversation
 		const summaryThreadId = `${targetThreadId}_summary_${Date.now()}`;
-		
+
 		// Implement timeout mechanism to prevent hanging
-		const timeoutPromise = new Promise<{ finished: boolean; answer?: string; error?: string }>((_, reject) => {
-			setTimeout(() => reject(new Error('Response generation timed out after 30 seconds')), 30000);
+		const timeoutPromise = new Promise<{
+			finished: boolean;
+			answer?: string;
+			error?: string;
+		}>((_, reject) => {
+			setTimeout(
+				() =>
+					reject(new Error('Response generation timed out after 30 seconds')),
+				30000,
+			);
 		});
-		
+
+		console.log(`├─ ${chalk.yellow('Finalizing conversation summary')}`);
 		let summaryResult;
 		try {
 			summaryResult = await Promise.race([
-				agent.generateResponse(summarizationPrompt, systemContext, summaryThreadId),
-				timeoutPromise
+				agent.generateResponse(
+					summarizationPrompt,
+					systemContext,
+					summaryThreadId,
+				),
+				timeoutPromise,
 			]);
 		} catch (timeoutError: any) {
 			// Clean up temporary thread on timeout
 			agent.clearMemoryForThread(summaryThreadId);
-			
+
+			console.log(`└─ ${chalk.red(timeoutError.message)}\n`);
 			return {
 				success: false,
 				output: '',
@@ -179,6 +224,7 @@ Please provide a structured summary that will serve as compressed memory for fut
 		}
 
 		if (summaryResult.error || !summaryResult.answer) {
+			console.log(`└─ ${chalk.red('Failed to generate conversation summary')}\n`);
 			return {
 				success: false,
 				output: '',
@@ -188,18 +234,26 @@ Please provide a structured summary that will serve as compressed memory for fut
 
 		const summary = summaryResult.answer;
 
-		useProgressStore.getState().setProgress('Compressing memory with summary...');
+		useProgressStore
+			.getState()
+			.setProgress('Compressing memory with summary...');
+		console.log(`├─ ${chalk.yellow('Compressing memory with summary')}`);
 		// Compress the memory with the summary
 		const compressTimeoutPromise = new Promise<void>((_, reject) => {
-			setTimeout(() => reject(new Error('Memory compression timed out after 30 seconds')), 30000);
+			setTimeout(
+				() =>
+					reject(new Error('Memory compression timed out after 30 seconds')),
+				30000,
+			);
 		});
-		
+
 		try {
 			await Promise.race([
 				agent.compressMemoryForThread(targetThreadId, summary, systemContext),
-				compressTimeoutPromise
+				compressTimeoutPromise,
 			]);
 		} catch (compressError: any) {
+			console.log(`└─ ${chalk.red(compressError.message)}\n`);
 			return {
 				success: false,
 				output: '',
@@ -209,7 +263,7 @@ Please provide a structured summary that will serve as compressed memory for fut
 
 		// Clean up temporary thread
 		agent.clearMemoryForThread(summaryThreadId);
-
+		console.log(`└─ ${chalk.green('Done!')}\n`);
 		return {
 			success: true,
 			output: `✅ Memory compressed successfully!
@@ -220,8 +274,10 @@ ${summary}
 The conversation history has been replaced with this summary to save tokens while preserving important context for future interactions.`,
 		};
 	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+		const errorMessage =
+			error instanceof Error ? error.message : 'Unknown error';
 		useProgressStore.getState().setProgress(errorMessage);
+		console.log(`└─ ${chalk.red(errorMessage)}\n`);
 		return {
 			success: false,
 			output: '',

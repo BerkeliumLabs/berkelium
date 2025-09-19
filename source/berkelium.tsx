@@ -38,7 +38,7 @@ export const BerkeliumCLI = () => {
 			setIsSelecting(true);
 			setMode('files');
 			handleFilter(searchInput);
-		} else if (inputValue.startsWith('/')) {
+		} else if (inputValue.endsWith('/') && inputValue.length < 2) {
 			setIsSelecting(true);
 			setMode('commands');
 			const searchInput = inputValue.split('/').at(-1) ?? '';
@@ -46,7 +46,7 @@ export const BerkeliumCLI = () => {
 		} else if (mode === 'files' && inputValue.includes('#')) {
 			const searchInput = inputValue.split('#').at(-1) ?? '';
 			handleFilter(searchInput);
-		} else if (mode === 'commands' && inputValue.includes('/')) {
+		} else if (mode === 'commands' && inputValue.startsWith('/')) {
 			const searchInput = inputValue.split('/').at(-1) ?? '';
 			handleFilter(searchInput);
 		} else {

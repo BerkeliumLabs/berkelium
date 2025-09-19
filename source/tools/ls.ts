@@ -97,7 +97,7 @@ export async function listDirectory(args: {
 			.map(e => e.type)
 			.join('\n')}`;
 
-		console.log(`└─ ${chalk.green('Done!')}`);
+		console.log(`└─ ${chalk.green('Done!')}\n`);
 
 		return {
 			success: true,
@@ -107,7 +107,7 @@ export async function listDirectory(args: {
 		const errorMessage =
 			error instanceof Error ? error.message : 'Unknown error';
 		useProgressStore.getState().setProgress(errorMessage);
-		console.log(`└─ ${chalk.red(errorMessage)}`);
+		console.log(`└─ ${chalk.red(errorMessage)}\n`);
 		return {
 			success: false,
 			output: '',
