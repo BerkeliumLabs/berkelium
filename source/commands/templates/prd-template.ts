@@ -11,9 +11,21 @@ export const PRD_TEMPLATE = `\`\`\`markdown
 - KPI: [Key performance indicator]
 \`\`\`
 
-#### 2. User Stories & Scenarios
+## 1. Technical Specifications & Constraints
+* **Technology Stack**:
+    * **Backend**: [e.g., Python, Node.js]
+    * **Frontend**: [e.g., React, Vue.js]
+    * **Database**: [e.g., PostgreSQL, MongoDB]
+* **Integration Points**:
+    * [List any external APIs or services this feature will interact with.]
+* **Security & Data Privacy**:
+    * [Describe any specific security requirements, such as encryption, authentication protocols, or compliance standards (e.g., GDPR).]
+* **Performance Expectations**:
+    * [What are the expected response times or load handling capabilities?]
+
+## 2. User Stories & Scenarios
 \`\`\`markdown
-## Primary User Flow
+### Primary User Flow
 \\\`\`\`mermaid
 graph LR
     A[User Action] --> B{Decision Point}
@@ -23,7 +35,7 @@ graph LR
     C --> E
 \\\`\`\`
 
-## User Stories
+### User Stories
 1. **As a [user type]**, I want to [action] so that [benefit]
    - Acceptance Criteria:
      - [ ] Criterion 1
@@ -33,9 +45,9 @@ graph LR
      - [Edge case 2]
 \`\`\`
 
-#### 3. System Architecture
+## 3. System Architecture
 \`\`\`markdown
-## High-Level Architecture
+### High-Level Architecture
 \\\`\`\`mermaid
 graph TB
     subgraph "Frontend"
@@ -60,7 +72,7 @@ graph TB
     State --> UI
 \\\`\`\`
 
-## Component Breakdown
+### Component Breakdown
 - **Frontend Components**:
   - [Component 1]: [Purpose]
   - [Component 2]: [Purpose]
@@ -74,9 +86,9 @@ graph TB
   - [Model 2]: [Fields and relationships]
 \`\`\`
 
-#### 4. Technical Specifications
+## 4. Technical Specifications
 \`\`\`markdown
-## API Design
+### API Design
 \\\`\`\`mermaid
 sequenceDiagram
     participant U as User
@@ -95,13 +107,13 @@ sequenceDiagram
     F-->>U: Display Result
 \\\`\`\`
 
-## Endpoints
+### Endpoints
 - **POST /api/[resource]**
   - Request: \`{field1: type, field2: type}\`
   - Response: \`{status: string, data: {...}}\`
   - Errors: \`400 Bad Request\`, \`401 Unauthorized\`
 
-## Data Flow
+### Data Flow
 \\\`\`\`mermaid
 flowchart TD
     A[Input Data] --> B{Validation}
@@ -112,7 +124,7 @@ flowchart TD
     F --> G[Return Success]
 \\\`\`\`
 
-## Development Phases
+### Development Phases
 \\\`\`\`mermaid
 graph LR
     A[Foundation] --> B[Core Features]
@@ -127,7 +139,7 @@ graph LR
     E -.- J[Documentation<br/>Monitoring<br/>Launch]
 \\\`\`\`
 
-#### Devil's Advocate Analysis
+## 5. Devil's Advocate Analysis
 \`\`\`yaml
 challenges:
   technical_risks:
@@ -152,19 +164,9 @@ challenges:
       handling: "Optimistic locking"
 \`\`\`
 
-#### Success Criteria
-\`\`\`markdown
-## Definition of Done
-- [ ] All user stories implemented
-- [ ] Test coverage > 80%
-- [ ] Performance benchmarks met
-- [ ] Security review passed
-- [ ] Documentation complete
-
-## Measurable Outcomes
-- Metric 1: [Target value]
-- Metric 2: [Target value]
-- User satisfaction: [Target score]
-\`\`\`
-
+## 6. Success Criteria
+* **GIVEN** [initial context]
+    * **WHEN** [an action is performed]
+    * **THEN** [the expected outcome occurs]
+    * [Add more GIVEN-WHEN-THEN clauses for each key functional requirement.]
 \`\`\``

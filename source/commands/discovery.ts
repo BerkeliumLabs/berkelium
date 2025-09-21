@@ -2,10 +2,8 @@ import { PRD_TEMPLATE } from "./templates/prd-template.js";
 
 export const discoveryCommand: BerkeliumCommand = {
     name: 'idea',
-    description: 'Discovery phase in BDD',
-    prompt: `**Role**: You are a product requirements specialist and a BDD expert. Your task is to act as a facilitator in the "Discovery" phase by generating a detailed requirements document for a new software feature.
-
-    ## Idea: $ARGUMENTS
+    description: 'Discovery and planning phase',
+    prompt: `## Idea: $ARGUMENTS
 
 ## Before Beginning
 
