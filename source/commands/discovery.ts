@@ -128,7 +128,7 @@ diagrams_needed:
 10. Appendices
 \`\`\`
 
-Save as: \`./.BERKELIUM/$BRANCH_NAME/prd.md\`
+Save as: \`./.berkelium/$BRANCH_NAME/prd.md\`
 
 ## Quality Checklist
 - [ ] Problem clearly articulated

@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import {execSync} from 'child_process';
+import chalk from 'chalk';
 
 export async function createFeatureBranch(args: CreateFeatureBranchArgs): Promise<CreateFeatureBranchResult> {
 	const {feature_description, json_mode = false} = args;
@@ -8,13 +9,15 @@ export async function createFeatureBranch(args: CreateFeatureBranchArgs): Promis
 	try {
 		// Get repository root
 		const repoRoot = execSync('git rev-parse --show-toplevel', {encoding: 'utf8'}).trim();
-		const specsDir = path.join(repoRoot, 'specs');
+		const specsDir = path.join(repoRoot, '.berkelium/specs');
 
+		console.log(`${chalk.hex('#e05d38').bold('●')} Create a feature branch`);
 		// Create specs directory if it doesn't exist
 		if (!fs.existsSync(specsDir)) {
 			fs.mkdirSync(specsDir, {recursive: true});
 		}
 
+		console.log(`├─ ${chalk.yellow('Find the highest numbered feature directory')}`);
 		// Find the highest numbered feature directory
 		let highest = 0;
 		if (fs.existsSync(specsDir)) {
@@ -48,9 +51,11 @@ export async function createFeatureBranch(args: CreateFeatureBranchArgs): Promis
 		// Final branch name
 		const finalBranchName = `${featureNum}-${branchName}`;
 
+		console.log(`├─ ${chalk.yellow(`Creating branch: ${finalBranchName} and switching to it`)}`);
 		// Create and switch to new branch
 		execSync(`git checkout -b "${finalBranchName}"`, {stdio: 'inherit'});
 
+		console.log(`├─ ${chalk.yellow('Create feature directory')}`);
 		// Create feature directory
 		const featureDir = path.join(specsDir, finalBranchName);
 		fs.mkdirSync(featureDir, {recursive: true});
@@ -74,6 +79,7 @@ export async function createFeatureBranch(args: CreateFeatureBranchArgs): Promis
 			].join('\n');
 		}
 
+		console.log(`└─ ${chalk.green('Done!')}\n`);
 		return {
 			success: true,
 			output
@@ -81,6 +87,7 @@ export async function createFeatureBranch(args: CreateFeatureBranchArgs): Promis
 
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : String(error);
+		console.log(`└─ ${chalk.red(`Error creating feature branch: ${errorMessage}`)}\n`);
 		return {
 			success: false,
 			output: '',

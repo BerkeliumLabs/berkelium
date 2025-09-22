@@ -5,7 +5,7 @@ export const formulateCommand: BerkeliumCommand = {
     description: 'Generate tasks',
     prompt: `**Important**: Run \`git branch --show-current\` from repo root and parse $BRANCH_NAME from the output. All paths must be absolute.
 
-**Input**: The complete \`./.BERKELIUM/$BRANCH_NAME/prd.md\` document from the previous stage.
+**Input**: The complete \`./.berkelium/$BRANCH_NAME/prd.md\` document from the previous stage.
 
 ## Analysis Process
 
@@ -30,7 +30,7 @@ export const formulateCommand: BerkeliumCommand = {
 ## PRP Generation
 
 1. Use this template as base and change the appropriate sections according to this project's needs: ${TASK_TEMPLATE}.
-2. Breakdown the implementation in to manageable tasks and for each task, create a new task file using the template. Use the naming convention \`T[number]_[feature_name].md\` (e.g., \`T001_User_Authentication.md\`, \`T002_Password_Reset.md\`). This ensures a clear, ordered workflow for the execution stage. Save all task files to \`./.BERKELIUM/$BRANCH_NAME/tasks/\`.
+2. Breakdown the implementation in to manageable tasks and for each task, create a new task file using the template. Use the naming convention \`T[number]_[feature_name].md\` (e.g., \`T001_User_Authentication.md\`, \`T002_Password_Reset.md\`). This ensures a clear, ordered workflow for the execution stage. Save all task files to \`./.berkelium/$BRANCH_NAME/tasks/\`.
 
 ### Context Section
 
