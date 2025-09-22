@@ -2,6 +2,7 @@ import {stat} from 'fs/promises';
 import {resolve} from 'path';
 import {glob as globPattern} from 'glob';
 import useProgressStore from '../store/progress.js';
+import chalk from 'chalk';
 
 /**
  * glob (FindFiles)
@@ -27,6 +28,13 @@ export async function glob(args: {
 			.setProgress(
 				`Searching for files with pattern "${pattern}" in ${resolvedPath}`,
 			);
+		console.log(
+			`${chalk
+				.hex('#e05d38')
+				.bold(
+					'●',
+				)} Searching for files with pattern "${pattern}" in ${resolvedPath}`,
+		);
 		// const fullPattern = join(resolvedPath, pattern);
 
 		const options: any = {
@@ -53,6 +61,7 @@ export async function glob(args: {
 			.setProgress(
 				`Found ${matches.length} files, sorting by modification time`,
 			);
+		console.log(`├─ ${chalk.yellow(`Found ${matches.length} files, sorting by modification time`)}`);
 		const filesWithStats = await Promise.all(
 			matches.map(async file => {
 				try {
@@ -73,6 +82,7 @@ export async function glob(args: {
 			'\n',
 		)}`;
 
+		console.log(`└─ ${chalk.green('Done!')}\n`);
 		return {
 			success: true,
 			output,
@@ -81,6 +91,8 @@ export async function glob(args: {
 		const errorMessage =
 			error instanceof Error ? error.message : 'Unknown error';
 		useProgressStore.getState().setProgress(errorMessage);
+
+		console.log(`└─ ${chalk.red(`Failed to find files with pattern ${pattern}: ${errorMessage}`)}\n`);
 		return {
 			success: false,
 			output: '',
