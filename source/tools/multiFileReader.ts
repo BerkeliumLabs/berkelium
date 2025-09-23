@@ -2,6 +2,7 @@ import {relative} from 'path';
 import {glob as globPattern} from 'glob';
 import {readFile as fsReadFile, stat} from 'fs/promises';
 import useProgressStore from '../store/progress.js';
+import chalk from 'chalk';
 
 /**
  * read_many_files (Multi-File Reader)
@@ -49,6 +50,7 @@ export async function readManyFiles(args: {
 		useProgressStore
 			.getState()
 			.setProgress(`Reading files from ${allPaths.join(', ')}`);
+		console.log(`${chalk.hex('#e05d38').bold('●')} Reading files from ${allPaths.join(', ')}`);
 
 		// Get all matching files
 		const allFiles: string[] = [];
@@ -67,8 +69,10 @@ export async function readManyFiles(args: {
 
 				const files = await globPattern(pattern, globOptions);
 				allFiles.push(...files);
+				console.log(`├─ ${chalk.yellow(`Found ${files.length} files for pattern ${pattern}`)}`);
 			} catch (error) {
 				// Continue with other patterns if one fails
+				console.log(`├─ ${chalk.yellow(`Failed to find files for pattern ${pattern}`)}`);
 				continue;
 			}
 		}
@@ -78,8 +82,10 @@ export async function readManyFiles(args: {
 		useProgressStore
 			.getState()
 			.setProgress(`Found ${uniqueFiles.length} files`);
+		console.log(`├─ ${chalk.yellow(`Found ${uniqueFiles.length} files`)}`);
 
 		if (uniqueFiles.length === 0) {
+			console.log(`└─ ${chalk.green('Done!')}\n`);
 			return {
 				success: true,
 				output: 'No files found matching the specified patterns.',
@@ -90,6 +96,7 @@ export async function readManyFiles(args: {
 		useProgressStore
 			.getState()
 			.setProgress(`Processing ${uniqueFiles.length} files`);
+		console.log(`├─ ${chalk.yellow(`Processing ${uniqueFiles.length} files`)}`);
 		const results: string[] = [];
 		let processedCount = 0;
 
@@ -135,6 +142,7 @@ export async function readManyFiles(args: {
 						`[Base64 ${ext.toUpperCase()} file: ${buffer.length} bytes]`,
 					);
 					results.push(base64Content);
+					console.log(`├─ ${chalk.yellow(`[Base64 ${ext.toUpperCase()} file: ${buffer.length} bytes]`)}`);
 				} else {
 					// Handle as text file, but check for binary content
 					const buffer = await fsReadFile(filePath);
@@ -154,17 +162,20 @@ export async function readManyFiles(args: {
 
 					results.push(`--- ${relativePath} ---`);
 					results.push(content);
+					console.log(`├─ ${chalk.yellow(`--- ${relativePath} ---`)}`);
 				}
 
 				processedCount++;
+				console.log(`├─ ${chalk.yellow(`Processed ${processedCount} files`)}`);
 			} catch (error) {
 				// Skip files that can't be read
+				console.log(`├─ ${chalk.yellow(`Skip files that can't be read`)}`);
 				continue;
 			}
 		}
 
 		results.push('--- End of content ---');
-
+		console.log(`└─ ${chalk.green('Done!')}\n`);
 		const output = results.join('\n');
 
 		return {
@@ -175,6 +186,7 @@ export async function readManyFiles(args: {
 		const errorMessage =
 			error instanceof Error ? error.message : 'Unknown error';
 		useProgressStore.getState().setProgress(errorMessage);
+		console.log(`└─ ${chalk.red(`Failed to read files: ${errorMessage}`)}\n`);
 		return {
 			success: false,
 			output: '',
