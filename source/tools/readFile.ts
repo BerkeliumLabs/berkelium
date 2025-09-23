@@ -2,6 +2,7 @@ import {readFile as fsReadFile, access, stat} from 'fs/promises';
 import {constants} from 'fs';
 import {resolve} from 'path';
 import useProgressStore from '../store/progress.js';
+import chalk from 'chalk';
 
 /**
  * read_file (ReadFile)
@@ -17,6 +18,7 @@ export async function readFile(args: {
 	try {
 		const resolvedPath = resolve(filePath);
 		useProgressStore.getState().setProgress(`Reading file: ${resolvedPath}`);
+		console.log(`${chalk.hex('#e05d38').bold('●')} Reading file: ${resolvedPath}`);
 		await access(resolvedPath, constants.F_OK | constants.R_OK);
 
 		const stats = await stat(resolvedPath);
@@ -45,6 +47,7 @@ export async function readFile(args: {
 			const mimeType = `image/${
 				extension.slice(1) === 'jpg' ? 'jpeg' : extension.slice(1)
 			}`;
+			console.log(`└─ ${chalk.green('Done!')}\n`);
 			return {
 				success: true,
 				output: JSON.stringify({
@@ -61,7 +64,9 @@ export async function readFile(args: {
 			useProgressStore
 				.getState()
 				.setProgress(`Reading PDF file: ${resolvedPath}`);
+			console.log(`├─ ${chalk.yellow(`Reading PDF file: ${resolvedPath}`)}`);
 			const content = await fsReadFile(resolvedPath);
+			console.log(`└─ ${chalk.green('Done!')}\n`);
 			return {
 				success: true,
 				output: JSON.stringify({
@@ -77,6 +82,7 @@ export async function readFile(args: {
 		useProgressStore
 			.getState()
 			.setProgress(`Reading text file: ${resolvedPath}`);
+		console.log(`├─ ${chalk.yellow(`Reading text file: ${resolvedPath}`)}`);
 		const content = await fsReadFile(resolvedPath, 'utf-8');
 		const lines = content.split('\n');
 
@@ -89,6 +95,8 @@ export async function readFile(args: {
 				.setProgress(
 					`Slicing file content from ${offset} to ${offset + limit}`,
 				);
+			console.log(`├─ ${chalk.yellow(`Slicing file content from ${offset} to ${offset + limit}`)}`);
+
 			const selectedLines = lines.slice(offset, offset + limit);
 			resultContent = selectedLines.join('\n');
 			truncationMessage = `[File content truncated: showing lines ${
@@ -100,11 +108,14 @@ export async function readFile(args: {
 			useProgressStore
 				.getState()
 				.setProgress(`File too long, truncating to 2000 lines`);
+			console.log(`├─ ${chalk.yellow(`File too long, truncating to 2000 lines`)}`);
+
 			const selectedLines = lines.slice(0, 2000);
 			resultContent = selectedLines.join('\n');
 			truncationMessage = `[File content truncated: showing first 2000 lines of ${lines.length} total lines]\n`;
 		}
 
+		console.log(`└─ ${chalk.green('Done!')}\n`);
 		return {
 			success: true,
 			output: truncationMessage + resultContent,
@@ -123,6 +134,7 @@ export async function readFile(args: {
 		}
 
 		useProgressStore.getState().setProgress(errorMessage);
+		console.log(`└─ ${chalk.red(`Failed to read file ${filePath}: ${errorMessage}`)}\n`);
 
 		return {
 			success: false,
