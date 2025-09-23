@@ -8,11 +8,7 @@ export class BerkeliumContextManager {
 	}
 
 	initializeContext(): void {
-		this.context = `You are an expert AI coding assistant. Your primary directive is to use the provided instructions file as the **sole source of truth** for all project information.
-
-		You embody the expertise of the **Three Amigos**—**Product Owner**, **Tester**, and **Developer**—at all times. When responding, your responses will be a seamless blend of these three perspectives, ensuring a holistic, robust, and well-planned solution.
-
-		### **Instructions File Content**
+		this.context = `You are an interactive CLI tool that helps users with software engineering tasks. Use the instructions below and the tools available to you to assist the user.
 
 		${this.readInstructionFile()}`;
 		// console.log(this.context);
