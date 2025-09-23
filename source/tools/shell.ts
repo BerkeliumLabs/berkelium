@@ -2,6 +2,7 @@ import {exec, spawn} from 'node:child_process';
 import {promisify} from 'node:util';
 import {resolve} from 'node:path';
 import useProgressStore from '../store/progress.js';
+import chalk from 'chalk';
 
 const execAsync = promisify(exec);
 
@@ -79,10 +80,12 @@ export async function runShellCommand(args: {
 }> {
 	const {command, description, directory} = args;
 	useProgressStore.getState().setProgress(`Executing command: ${command}`);
+	console.log(`${chalk.hex('#e05d38').bold('●')} Executing command: ${command}`);
 
 	// Check command restrictions from configuration
 	const restrictionCheck = isCommandAllowed(command);
 	if (!restrictionCheck.allowed) {
+		console.log(`└─ ${chalk.red(restrictionCheck.reason || 'Command not allowed')}\n`);
 		return {
 			Command: command,
 			Directory: directory ? resolve(directory) : process.cwd(),
@@ -97,6 +100,7 @@ export async function runShellCommand(args: {
 
 	// Check if command is potentially destructive
 	if (isDestructiveCommand(command)) {
+		console.log(`└─ ${chalk.red('Command is potentially destructive')}\n`);
 		return {
 			Command: command,
 			Directory: directory ? resolve(directory) : process.cwd(),
@@ -123,6 +127,7 @@ export async function runShellCommand(args: {
 
 	if (isBackground) {
 		// Handle background processes
+		console.log(`└─ ${chalk.green('Done!')}\n`);
 		return new Promise(resolve => {
 			const isWindows = process.platform === 'win32';
 			const shell = isWindows ? 'cmd.exe' : 'bash';
@@ -163,6 +168,7 @@ export async function runShellCommand(args: {
 
 			const {stdout, stderr} = await execAsync(command, options);
 			useProgressStore.getState().setProgress(`Command execution finished`);
+			console.log(`└─ ${chalk.green('Done!')}\n`);
 
 			return {
 				Command: command,
@@ -185,7 +191,7 @@ export async function runShellCommand(args: {
 				errorMessage = error.message;
 			}
 			useProgressStore.getState().setProgress(errorMessage);
-
+			console.log(`└─ ${chalk.red(errorMessage)}\n`);
 			return {
 				Command: command,
 				Directory: cwd,

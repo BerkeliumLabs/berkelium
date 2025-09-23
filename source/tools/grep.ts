@@ -2,6 +2,7 @@ import {execSync, exec} from 'child_process';
 import {promisify} from 'util';
 import {resolve, relative} from 'path';
 import useProgressStore from '../store/progress.js';
+import chalk from 'chalk';
 
 const execAsync = promisify(exec);
 
@@ -21,6 +22,7 @@ export async function searchFileContent(args: {
 		useProgressStore
 			.getState()
 			.setProgress(`Searching for pattern "${pattern}" in ${resolvedPath}`);
+		console.log(`${chalk.hex('#e05d38').bold('●')} Searching for pattern "${pattern}" in ${resolvedPath}`);
 
 		// Try git grep first if available
 		let command = '';
@@ -31,6 +33,7 @@ export async function searchFileContent(args: {
 			isGitRepo = true;
 		} catch {
 			// Not a git repo
+			console.log(`├─ ${chalk.yellow('Not a git repo, using regular grep or find')}`);
 		}
 
 		if (isGitRepo) {
@@ -52,8 +55,10 @@ export async function searchFileContent(args: {
 			useProgressStore
 				.getState()
 				.setProgress(`Found ${stdout.trim().split('\n').length} matches`);
+			console.log(`├─ ${chalk.yellow(`Found ${stdout.trim().split('\n').length} matches`)}`);
 
 			if (!stdout.trim()) {
+				console.log(`└─ ${chalk.green('Done!')}\n`);
 				return {
 					success: true,
 					output: `No matches found for pattern "${pattern}" in path "${searchPath}"${
@@ -62,6 +67,7 @@ export async function searchFileContent(args: {
 				};
 			}
 
+			console.log(`├─ ${chalk.yellow(`Formatting output`)}`);
 			// Format the output
 			const lines = stdout.trim().split('\n');
 			const groupedResults: {[file: string]: string[]} = {};
@@ -91,11 +97,12 @@ export async function searchFileContent(args: {
 				output += `File: ${file}\n${matches.join('\n')}\n---\n`;
 			}
 
-			return {
+			console.log(`└─ ${chalk.green('Done!')}\n`);			return {
 				success: true,
 				output: output.trim(),
 			};
 		} catch (error) {
+			console.log(`└─ ${chalk.green('Done!')}\n`);
 			return {
 				success: true,
 				output: `No matches found for pattern "${pattern}" in path "${searchPath}"${
@@ -107,6 +114,7 @@ export async function searchFileContent(args: {
 		const errorMessage =
 			error instanceof Error ? error.message : 'Unknown error';
 		useProgressStore.getState().setProgress(errorMessage);
+		console.log(`└─ ${chalk.red(`Failed to search for pattern ${pattern}: ${errorMessage}`)}\n`);
 		return {
 			success: false,
 			output: '',

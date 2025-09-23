@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import useProgressStore from '../store/progress.js';
 
 /**
@@ -9,6 +10,7 @@ export async function webFetch(args: {prompt: string}): Promise<ToolResult> {
 	useProgressStore
 		.getState()
 		.setProgress(`Fetching content from URLs in prompt`);
+	console.log(`${chalk.hex('#e05d38').bold('●')} Fetching content from URLs in prompt`);
 
 	try {
 		// Extract URLs from the prompt (up to 20)
@@ -16,6 +18,7 @@ export async function webFetch(args: {prompt: string}): Promise<ToolResult> {
 		const urls = prompt.match(urlRegex) || [];
 
 		if (urls.length === 0) {
+			console.log(`└─ ${chalk.red('No URLs found in the prompt')}\n`);
 			return {
 				success: false,
 				output: '',
@@ -25,6 +28,7 @@ export async function webFetch(args: {prompt: string}): Promise<ToolResult> {
 		}
 
 		if (urls.length > 20) {
+			console.log(`└─ ${chalk.red('Too many URLs detected')}\n`);
 			return {
 				success: false,
 				output: '',
@@ -37,6 +41,7 @@ export async function webFetch(args: {prompt: string}): Promise<ToolResult> {
 		useProgressStore
 			.getState()
 			.setProgress(`Found ${uniqueUrls.length} unique URLs`);
+		console.log(`├─ ${chalk.yellow(`Found ${uniqueUrls.length} unique URLs`)}`);
 
 		// Note: User confirmation would typically be handled by the CLI interface
 		// For now, we proceed with fetching as the tool is designed to be autonomous
@@ -45,6 +50,8 @@ export async function webFetch(args: {prompt: string}): Promise<ToolResult> {
 		useProgressStore
 			.getState()
 			.setProgress(`Fetching content from ${uniqueUrls.length} URLs`);
+		console.log(`├─ ${chalk.yellow(`Fetching content from ${uniqueUrls.length} URLs`)}`);
+
 		const fetchPromises = uniqueUrls.map(async url => {
 			try {
 				// Create AbortController for timeout
@@ -69,6 +76,7 @@ export async function webFetch(args: {prompt: string}): Promise<ToolResult> {
 				clearTimeout(timeoutId);
 
 				if (!response.ok) {
+					console.log(`└─ ${chalk.red(`Failed to fetch: HTTP ${response.status} ${response.statusText}`)}\n`);
 					return {
 						url,
 						success: false,
@@ -85,6 +93,7 @@ export async function webFetch(args: {prompt: string}): Promise<ToolResult> {
 					!contentType.includes('application/xml') &&
 					!contentType.includes('application/xhtml')
 				) {
+					console.log(`└─ ${chalk.red(`Unsupported content type: ${contentType}`)}\n`);
 					return {
 						url,
 						success: false,
@@ -139,6 +148,7 @@ export async function webFetch(args: {prompt: string}): Promise<ToolResult> {
 						.trim();
 				}
 
+				console.log(`└─ ${chalk.green('Done!')}\n`);
 				return {
 					url,
 					success: true,
@@ -148,6 +158,7 @@ export async function webFetch(args: {prompt: string}): Promise<ToolResult> {
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error ? error.message : 'Unknown error';
+				console.log(`└─ ${chalk.red(`Failed to fetch: ${errorMessage}`)}\n`);
 				return {
 					url,
 					success: false,
@@ -160,6 +171,7 @@ export async function webFetch(args: {prompt: string}): Promise<ToolResult> {
 		useProgressStore
 			.getState()
 			.setProgress(`Waiting for all fetches to complete`);
+		console.log(`├─ ${chalk.yellow(`Waiting for all fetches to complete`)}`);
 		const results = await Promise.all(fetchPromises);
 
 		// Format the response
@@ -167,6 +179,7 @@ export async function webFetch(args: {prompt: string}): Promise<ToolResult> {
 		const failedFetches = results.filter(r => !r.success);
 
 		if (successfulFetches.length === 0) {
+			console.log(`└─ ${chalk.red('No successful fetches')}\n`);
 			return {
 				success: false,
 				output: '',
@@ -184,6 +197,7 @@ export async function webFetch(args: {prompt: string}): Promise<ToolResult> {
 		// Add the original prompt context
 		output += `Original Request: ${prompt}\n\n`;
 
+		console.log(`├─ ${chalk.yellow(`Add content from each successful fetch`)}`);
 		// Add content from each successful fetch
 		for (const result of successfulFetches) {
 			output += `--- Content from ${result.url} ---\n`;
@@ -193,6 +207,7 @@ export async function webFetch(args: {prompt: string}): Promise<ToolResult> {
 			output += `${result.content}\n\n`;
 		}
 
+		console.log(`├─ ${chalk.yellow(`Add any fetch failures as warnings`)}`);
 		// Add any fetch failures as warnings
 		if (failedFetches.length > 0) {
 			output += `--- Fetch Warnings ---\n`;
@@ -203,6 +218,7 @@ export async function webFetch(args: {prompt: string}): Promise<ToolResult> {
 
 		output += '--- End of fetched content ---';
 
+		console.log(`└─ ${chalk.green('Done!')}\n`);
 		return {
 			success: true,
 			output,
@@ -211,6 +227,7 @@ export async function webFetch(args: {prompt: string}): Promise<ToolResult> {
 		const errorMessage =
 			error instanceof Error ? error.message : 'Unknown error';
 		useProgressStore.getState().setProgress(errorMessage);
+		console.log(`└─ ${chalk.red(`Web fetch failed: ${errorMessage}`)}\n`);
 		return {
 			success: false,
 			output: '',

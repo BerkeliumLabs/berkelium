@@ -2,6 +2,7 @@ import {access, readdir, stat} from 'fs/promises';
 import {constants} from 'fs';
 import {resolve, join} from 'path';
 import useProgressStore from '../store/progress.js';
+import chalk from 'chalk';
 
 /**
  * list_directory (ReadFolder)
@@ -19,6 +20,7 @@ export async function listDirectory(args: {
 		useProgressStore
 			.getState()
 			.setProgress(`Listing directory: ${resolvedPath}`);
+			console.log(`${chalk.hex('#e05d38').bold('●')} Listing directory: ${resolvedPath}`);
 		await access(resolvedPath, constants.F_OK | constants.R_OK);
 
 		let entries = await readdir(resolvedPath);
@@ -26,6 +28,7 @@ export async function listDirectory(args: {
 		// Apply ignore patterns
 		if (ignore.length > 0) {
 			useProgressStore.getState().setProgress(`Applying ignore patterns`);
+			console.log(`├─ ${chalk.yellow('Applying ignore patterns')}`);
 			entries = entries.filter(entry => {
 				return !ignore.some(pattern => {
 					// Simple glob pattern matching
@@ -39,7 +42,8 @@ export async function listDirectory(args: {
 
 		// Apply gitignore if requested
 		if (respect_git_ignore) {
-			useProgressStore.getState().setProgress(`Applying gitignore`);
+			useProgressStore.getState().setProgress(`Applying .gitignore`);
+			console.log(`├─ ${chalk.yellow('Applying .gitignore')}`);
 			entries = entries.filter(entry => {
 				// Basic gitignore patterns - exclude common ignored items
 				const commonIgnored = [
@@ -61,6 +65,7 @@ export async function listDirectory(args: {
 			[];
 
 		useProgressStore.getState().setProgress(`Getting entry details`);
+		console.log(`├─ ${chalk.yellow('Getting entry details')}`);
 		for (const entry of entries) {
 			try {
 				const entryPath = join(resolvedPath, entry);
@@ -81,6 +86,7 @@ export async function listDirectory(args: {
 
 		// Sort: directories first, then alphabetically
 		useProgressStore.getState().setProgress(`Sorting entries`);
+		console.log(`├─ ${chalk.yellow('Sorting entries')}`);
 		entryDetails.sort((a, b) => {
 			if (a.isDir && !b.isDir) return -1;
 			if (!a.isDir && b.isDir) return 1;
@@ -91,6 +97,8 @@ export async function listDirectory(args: {
 			.map(e => e.type)
 			.join('\n')}`;
 
+		console.log(`└─ ${chalk.green('Done!')}\n`);
+
 		return {
 			success: true,
 			output,
@@ -99,6 +107,7 @@ export async function listDirectory(args: {
 		const errorMessage =
 			error instanceof Error ? error.message : 'Unknown error';
 		useProgressStore.getState().setProgress(errorMessage);
+		console.log(`└─ ${chalk.red(errorMessage)}\n`);
 		return {
 			success: false,
 			output: '',

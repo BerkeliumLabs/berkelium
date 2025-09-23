@@ -1,5 +1,6 @@
 import {z} from 'zod';
 import useProgressStore from '../store/progress.js';
+import chalk from 'chalk';
 
 export const webSearchSchema = z.object({
 	query: z.string().describe('The search query.'),
@@ -9,6 +10,7 @@ type WebSearchParams = z.infer<typeof webSearchSchema>;
 
 export const webSearch = async ({query}: WebSearchParams) => {
 	useProgressStore.getState().setProgress(`Searching the web for "${query}"`);
+	console.log(`${chalk.hex('#e05d38').bold('●')} Searching the web for "${query}"`);
 	try {
 		const url = new URL('https://api.duckduckgo.com/');
 		url.searchParams.append('q', query);
@@ -23,6 +25,7 @@ export const webSearch = async ({query}: WebSearchParams) => {
 		});
 
 		if (!response.ok) {
+			console.log(`└─ ${chalk.red(`DuckDuckGo API error: ${response.status} ${response.statusText}`)}\n`);
 			throw new Error(
 				`DuckDuckGo API error: ${response.status} ${response.statusText}`,
 			);
@@ -30,6 +33,8 @@ export const webSearch = async ({query}: WebSearchParams) => {
 
 		const data = (await response.json()) as any;
 		useProgressStore.getState().setProgress(`Processing search results`);
+		console.log(`├─ ${chalk.yellow(`Processing search results`)}`);
+
 		const results: any[] = [];
 
 		if (data.AbstractText) {
@@ -53,11 +58,13 @@ export const webSearch = async ({query}: WebSearchParams) => {
 		}
 
 		if (results.length === 0) {
+			console.log(`└─ ${chalk.red(`No results found for "${query}"`)}\n`);
 			return `No results found for "${query}". Try searching on https://duckduckgo.com/?q=${encodeURIComponent(
 				query,
 			)}`;
 		}
 
+		console.log(`└─ ${chalk.green('Done!')}\n`);
 		return JSON.stringify(results, null, 2);
 	} catch (error) {
 		if (error instanceof Error) {
@@ -67,6 +74,7 @@ export const webSearch = async ({query}: WebSearchParams) => {
 		useProgressStore
 			.getState()
 			.setProgress('An unknown error occurred while searching.');
+		console.log(`└─ ${chalk.red('An unknown error occurred while searching.')}\n`);
 		return 'An unknown error occurred while searching.';
 	}
 };

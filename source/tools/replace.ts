@@ -7,6 +7,7 @@ import {
 import {resolve, dirname} from 'path';
 import {constants} from 'fs';
 import useProgressStore from '../store/progress.js';
+import chalk from 'chalk';
 
 /**
  * replace (Edit)
@@ -30,11 +31,13 @@ export async function replace(args: {
 		useProgressStore
 			.getState()
 			.setProgress(`Replacing text in ${resolvedPath}`);
+		console.log(`${chalk.hex('#e05d38').bold('●')} Replacing text in ${resolvedPath}`);
 
 		// If old_string is empty, create new file
 		if (oldString === '') {
 			try {
 				await access(resolvedPath, constants.F_OK);
+				console.log(`└─ ${chalk.red(`Cannot create file ${filePath}: file already exists`)}\n`);
 				return {
 					success: false,
 					output: '',
@@ -44,6 +47,7 @@ export async function replace(args: {
 				// File doesn't exist, create it
 				await mkdir(dirname(resolvedPath), {recursive: true});
 				await fsWriteFile(resolvedPath, newString, 'utf-8');
+				console.log(`└─ ${chalk.green('Done!')}\n`);
 				return {
 					success: true,
 					output: `Created new file: ${filePath} with provided content.`,
@@ -53,17 +57,20 @@ export async function replace(args: {
 
 		// Read existing file
 		useProgressStore.getState().setProgress(`Reading file content`);
+		console.log(`├─ ${chalk.yellow(`Reading file content`)}`);
 		const content = await fsReadFile(resolvedPath, 'utf-8');
 
 		// Count occurrences
 		useProgressStore
 			.getState()
 			.setProgress(`Counting occurrences of the string to be replaced`);
+		console.log(`├─ ${chalk.yellow(`Counting occurrences of the string to be replaced`)}`);
 		const occurrences = (
 			content.match(new RegExp(escapeRegExp(oldString), 'g')) || []
 		).length;
 
 		if (occurrences === 0) {
+			console.log(`└─ ${chalk.red(`Failed to edit, 0 occurrences found of the specified old_string in ${filePath}`)}\n`);
 			return {
 				success: false,
 				output: '',
@@ -72,6 +79,7 @@ export async function replace(args: {
 		}
 
 		if (occurrences !== expected_replacements) {
+			console.log(`└─ ${chalk.red(`Failed to edit, expected ${expected_replacements} occurrences but found ${occurrences} in ${filePath}`)}\n`);
 			return {
 				success: false,
 				output: '',
@@ -82,6 +90,7 @@ export async function replace(args: {
 		// Perform replacement
 		// Perform replacement
 		useProgressStore.getState().setProgress(`Performing replacement`);
+		console.log(`├─ ${chalk.yellow(`Performing replacement`)}`);
 		const newContent = content.replace(
 			new RegExp(escapeRegExp(oldString), 'g'),
 			newString,
@@ -89,8 +98,10 @@ export async function replace(args: {
 
 		// Write back to file
 		useProgressStore.getState().setProgress(`Writing changes back to the file`);
+		console.log(`├─ ${chalk.yellow(`Writing changes back to the file`)}`);
 		await fsWriteFile(resolvedPath, newContent, 'utf-8');
 
+		console.log(`└─ ${chalk.green('Done!')}\n`);
 		return {
 			success: true,
 			output: `Successfully modified file: ${filePath} (${expected_replacements} replacements).`,
@@ -108,6 +119,7 @@ export async function replace(args: {
 			};
 		}
 
+		console.log(`└─ ${chalk.red(`Failed to edit file ${filePath}: ${errorMessage}`)}\n`);
 		return {
 			success: false,
 			output: '',
